@@ -1,17 +1,24 @@
 import gameWrapper as gw
+import networkx as nx
+
 
 def climateZone(latitude, longitude):
     # TODO implement
     pass
 
 
-def getConnectivity(city):
+def citiesMakeGraph(cities):
+    """Represent cities as a graph using NetworkX graph representation"""
+    pass
+
+
+def getConnectivity(cityGraph, city):
     """Rank connectivity to other cities using PageRank algorithm (random surfer model)"""
     # TODO implement
     pass
 
 
-def getVictimConnectivity(city):
+def getVictimConnectivity(cityGraph, city):
     """Rank connectivity to uninfected cities using PageRank algorithm (rational surfer model)"""
     # TODO implement
     pass
