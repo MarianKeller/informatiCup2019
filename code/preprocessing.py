@@ -9,6 +9,12 @@ def climateZone(latitude, longitude):
 
 def citiesMakeGraph(cities):
     """Represent cities as a graph using NetworkX graph representation"""
+    # TODO implement
+    G = nx.Graph(city[])
+    
+    for city in cities:
+        G.add_node(city)
+        # TODO: add edges
     pass
 
 
