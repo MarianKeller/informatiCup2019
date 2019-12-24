@@ -1,7 +1,5 @@
 #TODO always test if rounds > 0 for do actions, else throw error
 #TODO always check if city is valid, else throw error (?)
-#TODO use hungarian notation (?)
-
 
 def getRound(game):
     return game["round"]
@@ -38,20 +36,41 @@ def getConnections(city):
     return city["connections"]
 
 
+def ratingToIndex(rating):
+    if  rating == "--":
+        return 1
+
+    if  rating == "-":
+        return 2
+
+    if  rating == "o":
+        return 3
+
+    if  rating == "+":
+        return 4
+
+    if  rating == "++":
+        return 5
+
+
 def getEconomy(city):
-    return city["economy"]
+    return ratingToIndex(city["economy"])
+
+
+def getGovernment(city):
+    return ratingToIndex(city["government"])
 
 
 def getHygiene(city):
-    return city["hygiene"]
+    return ratingToIndex(city["hygiene"])
 
 
 def getAwareness(city):
-    return city["awareness"]
+    return ratingToIndex(city["awareness"])
 
 
 def getEvents(city):
-    return city["events"]
+    return city["events"])
 
 
 def doEndRound():

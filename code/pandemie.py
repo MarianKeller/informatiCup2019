@@ -10,7 +10,7 @@ import gameWrapper
 def index():
     game = request.json
     print(f'round: {game["round"]}, outcome: {game["outcome"]}')
-
+    
     act = {"type": "exertInfluence", "city": gameWrapper.getCities(game)[0], "type": "endRound"}
     return act
 
