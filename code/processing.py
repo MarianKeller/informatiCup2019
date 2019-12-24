@@ -6,13 +6,13 @@ def climateZone(latitude, longitude):
 
 
 def getConnectivity(city):
-    """Rank connectivity to other cities using PageRank algorithm (random surfer)"""
+    """Rank connectivity to other cities using PageRank algorithm (random surfer model)"""
     # TODO implement
     pass
 
 
 def getVictimConnectivity(city):
-    """Rank connectivity to uninfected cities using PageRank algorith"""
+    """Rank connectivity to uninfected cities using PageRank algorithm (rational surfer model)"""
     # TODO implement
     pass
 
