@@ -74,7 +74,64 @@ def getAwareness(game, city):
 
 
 def getCityEvents(game, city):
-        return game["cities"][city].get("events")
+    if events in game["cities"][city]:
+        return game["cities"][city]
+    else
+        return []
+
+
+def getPathogens(game, city):
+    events = getCityEvents(game, city)
+    if events is None:
+        return None
+    else:
+        pathogens = []
+        for event in events:
+            if event["type"] == "outbreak":
+                pathogens.append(event["pathogen"]["name"])
+        return pathogens
+
+
+def getPathogenInfectivity(game, pathogen):
+    events = getGameEvents(game)
+    for event in events:
+        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
+            return ratingToIndex(event["pathogen"]["infectivity"])
+
+
+def getPathogenMobility(game, pathogen):
+    events = getGameEvents(game)
+    for event in events:
+        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
+            return ratingToIndex(event["pathogen"]["mobility"])
+
+
+def getPathogenDuration(game, pathogen):
+    events = getGameEvents(game)
+    for event in events:
+        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
+            return ratingToIndex(event["pathogen"]["duration"])
+
+
+def getPathogenLethality(game, pathogen):
+    events = getGameEvents(game)
+    for event in events:
+        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
+            return ratingToIndex(event["pathogen"]["lethality"])
+
+
+def getPathogenPrevalenceCity(game, city, pathogen):
+    events = getCityEvents(game)
+    for event in events:
+        if event["type"] == "outbreak" and event["pathogen"]["name"] == pathogen:
+            return ratingToIndex(event["prevalence"])
+
+
+def getPathogenPrevalenceWorld(game, pathogen):
+    events = getGameEvents(game)
+    for event in events:
+        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
+            return ratingToIndex(event["prevalence"])
 
 
 def doEndRound():
