@@ -1,1 +1,1 @@
-# informatiCup2019
+# informatiCup2020
