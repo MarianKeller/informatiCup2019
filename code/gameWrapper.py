@@ -15,25 +15,29 @@ def getPoints(game):
 
 def getCities(game):
     cities = []
-    for city in game["cities"]:
+    for city in game["cities"].keys():
         cities.append(city)
     return cities
 
 
-def getLatitude(city):
-    return city["latitude"]
+def getGameEvents(game):
+    return game["events"]
 
 
-def getLongitude(city):
-    return city["longitude"]
+def getLatitude(game, city):
+    return game["cities"][city]["latitude"]
 
 
-def getPopulation(city):
-    return city["population"]
+def getLongitude(game, city):
+    return game["cities"][city]["longitude"]
 
 
-def getConnections(city):
-    return city["connections"]
+def getPopulation(game, city):
+    return game["cities"][city]["population"]
+
+
+def getConnections(game, city):
+    return game["cities"][city]["connections"]
 
 
 def ratingToIndex(rating):
@@ -53,24 +57,24 @@ def ratingToIndex(rating):
         return 5
 
 
-def getEconomy(city):
-    return ratingToIndex(city["economy"])
+def getEconomy(game, city):
+    return ratingToIndex(game["cities"][city]["economy"])
 
 
-def getGovernment(city):
-    return ratingToIndex(city["government"])
+def getGovernment(game, city):
+    return ratingToIndex(game["cities"][city]["government"])
 
 
-def getHygiene(city):
-    return ratingToIndex(city["hygiene"])
+def getHygiene(game, city):
+    return ratingToIndex(game["cities"][city]["hygiene"])
 
 
-def getAwareness(city):
-    return ratingToIndex(city["awareness"])
+def getAwareness(game, city):
+    return ratingToIndex(game["cities"][city]["awareness"])
 
 
-def getEvents(city):
-    return city["events"])
+def getCityEvents(game, city):
+        return game["cities"][city].get("events")
 
 
 def doEndRound():
