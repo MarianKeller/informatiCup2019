@@ -5,15 +5,15 @@ from bottle import post, request, run, BaseRequest
 import json
 import gameWrapper as gw
 import preprocessing as pre
-
+import actor
 
 @post("/")
 def index():
     game = request.json
-
     print(f'round: {game["round"]}, outcome: {game["outcome"]}')
-    act = {"type": "endRound"}
-    return act
+    action = actor.action(game)
+    print("action: ", action)
+    return action
 
 
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024

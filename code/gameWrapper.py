@@ -74,22 +74,19 @@ def getAwareness(game, city):
 
 
 def getCityEvents(game, city):
-    if events in game["cities"][city]:
-        return game["cities"][city]
-    else
+    if "events" in game["cities"][city].keys():
+        return game["cities"][city]["events"]
+    else:
         return []
 
 
 def getPathogens(game, city):
     events = getCityEvents(game, city)
-    if events is None:
-        return None
-    else:
-        pathogens = []
-        for event in events:
-            if event["type"] == "outbreak":
-                pathogens.append(event["pathogen"]["name"])
-        return pathogens
+    pathogens = []
+    for event in events:
+        if event["type"] == "outbreak":
+            pathogens.append(event["pathogen"]["name"])
+    return pathogens
 
 
 def getPathogenInfectivity(game, pathogen):
@@ -97,6 +94,7 @@ def getPathogenInfectivity(game, pathogen):
     for event in events:
         if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
             return ratingToIndex(event["pathogen"]["infectivity"])
+    return 0
 
 
 def getPathogenMobility(game, pathogen):
@@ -104,6 +102,7 @@ def getPathogenMobility(game, pathogen):
     for event in events:
         if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
             return ratingToIndex(event["pathogen"]["mobility"])
+    return 0
 
 
 def getPathogenDuration(game, pathogen):
@@ -111,6 +110,7 @@ def getPathogenDuration(game, pathogen):
     for event in events:
         if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
             return ratingToIndex(event["pathogen"]["duration"])
+    return 0
 
 
 def getPathogenLethality(game, pathogen):
@@ -118,13 +118,15 @@ def getPathogenLethality(game, pathogen):
     for event in events:
         if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
             return ratingToIndex(event["pathogen"]["lethality"])
+    return 0
 
 
 def getPathogenPrevalenceCity(game, city, pathogen):
-    events = getCityEvents(game)
+    events = getCityEvents(game, city)
     for event in events:
         if event["type"] == "outbreak" and event["pathogen"]["name"] == pathogen:
-            return ratingToIndex(event["prevalence"])
+            return event["prevalence"]
+    return 0
 
 
 def getPathogenPrevalenceWorld(game, pathogen):
@@ -132,6 +134,7 @@ def getPathogenPrevalenceWorld(game, pathogen):
     for event in events:
         if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
             return ratingToIndex(event["prevalence"])
+    return 0
 
 
 def doEndRound():
@@ -143,43 +146,43 @@ def doPutUnderQuarantine(city, rounds):
 
 
 def doCloseAirport(city, rounds):
-    {"type" : "closeAirport", "city" : "<Name einer Stadt: S>", "rounds" : "<Anzahl Runden: R, natürliche Zahl > 0>"}
+    return {"type" : "closeAirport", "city" : city, "rounds" : rounds}
 
 
 def doCloseConnection(fromCity, toCity, rounds):
-    {"type" : "closeConnection", "fromCity" : fromCity, "toCity" : toCity, "rounds" : rounds}
+    return {"type" : "closeConnection", "fromCity" : fromCity, "toCity" : toCity, "rounds" : rounds}
 
 
 def doDevelopVaccine(pathogen):
-    {"type" : "developVaccine", "pathogen" : pathogen}
+    return {"type" : "developVaccine", "pathogen" : pathogen}
 
 
 def doDeployVaccine(pathogen, city):
-    {"type" : "deployVaccine", "pathogen" : pathogen, "city" : city}
+    return {"type" : "deployVaccine", "pathogen" : pathogen, "city" : city}
 
 
 def doDevelopMedication(pathogen):
-    {"type" : "developMedication", "pathogen" : pathogen}
+    return {"type" : "developMedication", "pathogen" : pathogen}
 
 
 def doDeployMedication(pathogen, city):
-    {"type" : "deployMedication", "pathogen" : pathogen, "city" : city}
+    return {"type" : "deployMedication", "pathogen" : pathogen, "city" : city}
 
 
 def doExertInfluence(city):
-    {"type": "exertInfluence", "city" : city}
+    return {"type": "exertInfluence", "city" : city}
 
 
 def doCallElections(city):
-    {"type" : "callElections", "city" : city}
+    return {"type" : "callElections", "city" : city}
 
 
 def doApplyHygienicMeasures(city):
-    {"type" : "applyHygienicMeasures", "city" : city}
+    return {"type" : "applyHygienicMeasures", "city" : city}
 
 
 def doLaunchCampaign(city):
-    {"type" : "launchCampaign", "city" : city}
+    return {"type" : "launchCampaign", "city" : city}
 
 
 def costEndRound():

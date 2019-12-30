@@ -6,29 +6,32 @@ climateZones = Enum('climateZones','TROPICAL SUBTROPICAL MODERATE ARCTIC')
 
 
 def climateZoneIsTropical(latitude):
-    absoluteLatitude = math.abs(latitude)
-    if abslat >= 0 or abslat <= 23.5:
+    absoluteLatitude = abs(latitude)
+    if absoluteLatitude >= 0 and absoluteLatitude <= 23.5:
         return 1
     else:
         return 0
 
 
 def climateZoneIsSubTropical(latitude):
-    if absoluteLatitude > 23.5 or absoluteLatitude <= 40:
+    absoluteLatitude = abs(latitude)
+    if absoluteLatitude > 23.5 and absoluteLatitude <= 40:
         return 1
     else:
         return 0
 
 
 def climateZoneIsModerate(latitude):
-    if absoluteLatitude > 40 or absoluteLatitude <= 60:
+    absoluteLatitude = abs(latitude)
+    if absoluteLatitude > 40 and absoluteLatitude <= 60:
         return 1
     else:
         return 0
 
 
 def climateZoneIsArctic(latitude):
-    if absoluteLatitude > 60 or absoluteLatitude <= 90:
+    absoluteLatitude = abs(latitude)
+    if absoluteLatitude > 60 and absoluteLatitude <= 90:
         return 1
     else:
         return 0
@@ -60,7 +63,7 @@ def getHighestPathogenMobility(game, city):
     worstPathogen = None
     highestMobility = 0
     for pathogen in pathogens:
-        curInfectivity = gw.getPathogenMobility(game, pathogen)
+        curMobility = gw.getPathogenMobility(game, pathogen)
         if curMobility > highestMobility:
             worstPathogen = pathogen
             highestMobility = curMobility
@@ -97,44 +100,47 @@ def getHighestPathogenPrevalence(game, city):
     highestPrevalence = 0.0
     for pathogen in pathogens:
         curPrevalence = gw.getPathogenPrevalenceCity(game, city, pathogen)
-        if curPrevalence > highestLethality:
+        if curPrevalence > highestPrevalence:
             worstPathogen = pathogen
             highestPrevalence = curPrevalence
     return (worstPathogen, highestPrevalence)
 
 
-def vectorizeState(gameState):
-    rounds = gw.getRound(gameState)
-    points = gw.getPoints(gameState)
-    cities = gw.getCities(gameState)
+def vectorizeState(game):
+    rounds = gw.getRound(game)
+    points = gw.getPoints(game)
+    cities = gw.getCities(game)
 
-    cityStateVector = []
+    gameStateMatrix = []
     for city in cities:
+        cityStateVector = []
+
         # independent of city
         cityStateVector.append(rounds)
         cityStateVector.append(points)
 
-        # dependent of city non-indicator
+        # dependent on city non-indicator
         cityStateVector.append(gw.getPopulation(game, city))
         cityStateVector.append(gw.getEconomy(game, city))
         cityStateVector.append(gw.getGovernment(game, city))
         cityStateVector.append(gw.getHygiene(game, city))
         cityStateVector.append(gw.getAwareness(game, city))
     
-        # dependent of city indicator
+        # dependent on city indicator
         latitude = gw.getLatitude(game, city)
         cityStateVector.append(climateZoneIsTropical(latitude))
         cityStateVector.append(climateZoneIsSubTropical(latitude))
         cityStateVector.append(climateZoneIsModerate(latitude))
         cityStateVector.append(climateZoneIsArctic(latitude))
 
-        cityStateVector.append(climateZone(gw.getLatitude(game, city)))
         cityStateVector.append(getConnectivity(game, city))
         cityStateVector.append(getHighestPathogenInfectivity(game, city)[1])
         cityStateVector.append(getHighestPathogenMobility(game, city)[1])
         cityStateVector.append(getHighestPathogenLethality(game, city)[1])
-        cityStateVector.append(getHighestPathogenPrevalence(game, city)[1])
+        cityStateVector.append(round(getHighestPathogenPrevalence(game, city)[1],4))
 
         # TODO missing indicator values
-        
-    return cityStateVector
+
+        gameStateMatrix.append(cityStateVector)
+
+    return gameStateMatrix
