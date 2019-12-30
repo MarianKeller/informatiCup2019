@@ -3,15 +3,16 @@
 
 from bottle import post, request, run, BaseRequest
 import json
-import gameWrapper
+import gameWrapper as gw
+import preprocessing as pre
 
 
 @post("/")
 def index():
     game = request.json
+
     print(f'round: {game["round"]}, outcome: {game["outcome"]}')
-    
-    act = {"type": "exertInfluence", "city": gameWrapper.getCities(game)[0], "type": "endRound"}
+    act = {"type": "endRound"}
     return act
 
 
