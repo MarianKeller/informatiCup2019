@@ -94,6 +94,12 @@ def getHighestPathogenPrevalence(game, city):
     return (worstPathogen, highestPrevalence)
 
 
+def getMaxConnectedVictims(game, city, pathogen):
+    # TODO
+    # return (worstConnection, maxVictims)
+    pass
+
+
 def vectorizeState(game):
     rounds = gw.getRound(game)
     points = gw.getPoints(game)
@@ -146,6 +152,7 @@ def vectorizeState(game):
 
             # TODO missing indicator values
 
+            stateList.append(1)  # bias
             stateVec = np.array[stateList]
             gameStateDict[city, pathogen] = stateVec
 
