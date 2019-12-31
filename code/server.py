@@ -4,7 +4,7 @@ from bottle import BaseRequest, post, request, run
 
 import actor
 import gameWrapper as gw
-import preprocessing as pre
+import preprocessor as pre
 
 
 @post("/")
