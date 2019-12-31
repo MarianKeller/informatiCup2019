@@ -58,8 +58,9 @@ def action(game, weightMat, roundsMat):
     weightedActions = []
     for city, pathogen in gameStateDict.keys():
         inputStateVec = gameStateDict[city, pathogen]
-        actionWeightVec = np.dot(inputStateVec, weightMat)
-        numberRoundsVec = np.dot(inputStateVec, roundsMat)
+        print(np.shape(inputStateVec))
+        actionWeightVec = np.dot(weightMat, inputStateVec)
+        numberRoundsVec = np.dot(roundsMat, inputStateVec)
 
         roundsQuarantine = numberRoundsVec[0]
         roundsCloseAirport = numberRoundsVec[1]
