@@ -1,7 +1,8 @@
 import math
 
-import gameWrapper as gw
 import numpy as np
+
+import gameWrapper as gw
 
 
 def climateZoneIsTropical(latitude):

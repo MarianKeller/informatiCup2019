@@ -1,6 +1,7 @@
+import numpy as np
+
 import gameWrapper as gw
 import preprocessor as pre
-import numpy as np
 
 
 # width weightMatrix = length stateVector + 1
