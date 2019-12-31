@@ -105,10 +105,10 @@ def getHighestPathogenPrevalence(game, city):
 
 
 def getMaxConnectedVictims(game, city, pathogen):
-    connections = gw.getConnections(game, city)
-    worstConnection = connections[0]
+    worstConnection = None
     maxVictims = 0
 
+    connections = gw.getConnections(game, city)
     for connection in connections:
         pathogens = gw.getPathogens(game, connection)
         population = gw.getPopulation(game, connection)
