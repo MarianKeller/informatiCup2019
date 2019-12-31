@@ -126,10 +126,12 @@ def getPathogenPrevalenceCity(game, city, pathogen):
     return 0
 
 
+# testing revealed that prevalence is not always available; is it available at all?
+# TODO find out if a pathogen has a world-prevalence; if no, get it by iteration through all cities
 def getPathogenPrevalenceWorld(game, pathogen):
     events = getGameEvents(game)
     for event in events:
-        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
+        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen and "prevalence" in event:
             return ratingToIndex(event["prevalence"])
     return 0
 
