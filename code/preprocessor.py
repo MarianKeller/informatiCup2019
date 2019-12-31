@@ -5,34 +5,22 @@ from enum import Enum
 
 def climateZoneIsTropical(latitude):
     absoluteLatitude = abs(latitude)
-    if absoluteLatitude >= 0 and absoluteLatitude <= 23.5:
-        return 1
-    else:
-        return 0
+    return int(absoluteLatitude >= 0 and absoluteLatitude <= 23.5)
 
 
 def climateZoneIsSubTropical(latitude):
     absoluteLatitude = abs(latitude)
-    if absoluteLatitude > 23.5 and absoluteLatitude <= 40:
-        return 1
-    else:
-        return 0
+    return int(absoluteLatitude > 23.5 and absoluteLatitude <= 40)
 
 
 def climateZoneIsModerate(latitude):
     absoluteLatitude = abs(latitude)
-    if absoluteLatitude > 40 and absoluteLatitude <= 60:
-        return 1
-    else:
-        return 0
+    return int(absoluteLatitude > 40 and absoluteLatitude <= 60)
 
 
 def climateZoneIsArctic(latitude):
     absoluteLatitude = abs(latitude)
-    if absoluteLatitude > 60 and absoluteLatitude <= 90:
-        return 1
-    else:
-        return 0
+    return int(absoluteLatitude > 60 and absoluteLatitude <= 90)
 
 
 def getConnectivity(game, city):
@@ -109,37 +97,50 @@ def vectorizeState(game):
     points = gw.getPoints(game)
     cities = gw.getCities(game)
 
-    gameStateMatrix = []
+    gameState = {}
     for city in cities:
-        cityStateVector = []
+        for pathogen in gw.getPathogens(game, city):
+            stateVec = []
 
-        # independent of city
-        cityStateVector.append(rounds)
-        cityStateVector.append(points)
+            # independent of city
+            stateVec.append(rounds)
+            stateVec.append(points)
 
-        # dependent on city non-indicator
-        cityStateVector.append(gw.getPopulation(game, city))
-        cityStateVector.append(gw.getEconomy(game, city))
-        cityStateVector.append(gw.getGovernment(game, city))
-        cityStateVector.append(gw.getHygiene(game, city))
-        cityStateVector.append(gw.getAwareness(game, city))
+            # dependent on city, non-indicator
+            stateVec.append(gw.getPopulation(game, city))
+            stateVec.append(gw.getEconomy(game, city))
+            stateVec.append(gw.getGovernment(game, city))
+            stateVec.append(gw.getHygiene(game, city))
+            stateVec.append(gw.getAwareness(game, city))
 
-        # dependent on city indicator
-        latitude = gw.getLatitude(game, city)
-        cityStateVector.append(climateZoneIsTropical(latitude))
-        cityStateVector.append(climateZoneIsSubTropical(latitude))
-        cityStateVector.append(climateZoneIsModerate(latitude))
-        cityStateVector.append(climateZoneIsArctic(latitude))
+            # dependent on pathogen, non-indicator
+            stateVec.append(
+                gw.getPathogenInfectivity(game, pathogen))
+            stateVec.append(gw.getPathogenMobility(game, pathogen))
+            stateVec.append(gw.getPathogenDuration(game, pathogen))
+            stateVec.append(gw.getPathogenLethality(game, pathogen))
+            stateVec.append(
+                gw.getPathogenPrevalenceCity(game, city, pathogen))
 
-        cityStateVector.append(getConnectivity(game, city))
-        cityStateVector.append(getHighestPathogenInfectivity(game, city)[1])
-        cityStateVector.append(getHighestPathogenMobility(game, city)[1])
-        cityStateVector.append(getHighestPathogenLethality(game, city)[1])
-        cityStateVector.append(
-            round(getHighestPathogenPrevalence(game, city)[1], 4))
+            # dependent on city, indicator
+            latitude = gw.getLatitude(game, city)
+            stateVec.append(climateZoneIsTropical(latitude))
+            stateVec.append(climateZoneIsSubTropical(latitude))
+            stateVec.append(climateZoneIsModerate(latitude))
+            stateVec.append(climateZoneIsArctic(latitude))
 
-        # TODO missing indicator values
+            stateVec.append(getConnectivity(game, city))
+            stateVec.append(
+                getHighestPathogenInfectivity(game, city)[1])
+            stateVec.append(
+                getHighestPathogenMobility(game, city)[1])
+            stateVec.append(
+                getHighestPathogenLethality(game, city)[1])
+            stateVec.append(
+                round(getHighestPathogenPrevalence(game, city)[1], 4))
 
-        gameStateMatrix.append(cityStateVector)
+            # TODO missing indicator values
 
-    return gameStateMatrix
+            gameState[city, pathogen] = stateVec
+
+    return gameState
