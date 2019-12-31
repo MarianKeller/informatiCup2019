@@ -7,6 +7,6 @@ def action(game):
     for i in range(len(gameStateMatrix)):
         cityStateVector = gameStateMatrix[i]
         print("city:", gw.getCities(game)[i] + ",\t\tvector:", cityStateVector)
-    
+
     action = gw.doEndRound()
     return action

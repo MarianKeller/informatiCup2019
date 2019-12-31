@@ -1,6 +1,3 @@
-#TODO always test if rounds > 0 for do actions, else throw error
-#TODO always check if city is valid, else throw error (?)
-
 def getRound(game):
     return game["round"]
 
@@ -41,19 +38,19 @@ def getConnections(game, city):
 
 
 def ratingToIndex(rating):
-    if  rating == "--":
+    if rating == "--":
         return 1
 
-    if  rating == "-":
+    if rating == "-":
         return 2
 
-    if  rating == "o":
+    if rating == "o":
         return 3
 
-    if  rating == "+":
+    if rating == "+":
         return 4
 
-    if  rating == "++":
+    if rating == "++":
         return 5
 
 
@@ -138,51 +135,51 @@ def getPathogenPrevalenceWorld(game, pathogen):
 
 
 def doEndRound():
-    return {"type" : "endRound"}
+    return {"type": "endRound"}
 
 
 def doPutUnderQuarantine(city, rounds):
-    return {"type" : "putUnderQuarantine", "city" : city, "rounds": rounds}
+    return {"type": "putUnderQuarantine", "city": city, "rounds": rounds}
 
 
 def doCloseAirport(city, rounds):
-    return {"type" : "closeAirport", "city" : city, "rounds" : rounds}
+    return {"type": "closeAirport", "city": city, "rounds": rounds}
 
 
 def doCloseConnection(fromCity, toCity, rounds):
-    return {"type" : "closeConnection", "fromCity" : fromCity, "toCity" : toCity, "rounds" : rounds}
+    return {"type": "closeConnection", "fromCity": fromCity, "toCity": toCity, "rounds": rounds}
 
 
 def doDevelopVaccine(pathogen):
-    return {"type" : "developVaccine", "pathogen" : pathogen}
+    return {"type": "developVaccine", "pathogen": pathogen}
 
 
 def doDeployVaccine(pathogen, city):
-    return {"type" : "deployVaccine", "pathogen" : pathogen, "city" : city}
+    return {"type": "deployVaccine", "pathogen": pathogen, "city": city}
 
 
 def doDevelopMedication(pathogen):
-    return {"type" : "developMedication", "pathogen" : pathogen}
+    return {"type": "developMedication", "pathogen": pathogen}
 
 
 def doDeployMedication(pathogen, city):
-    return {"type" : "deployMedication", "pathogen" : pathogen, "city" : city}
+    return {"type": "deployMedication", "pathogen": pathogen, "city": city}
 
 
 def doExertInfluence(city):
-    return {"type": "exertInfluence", "city" : city}
+    return {"type": "exertInfluence", "city": city}
 
 
 def doCallElections(city):
-    return {"type" : "callElections", "city" : city}
+    return {"type": "callElections", "city": city}
 
 
 def doApplyHygienicMeasures(city):
-    return {"type" : "applyHygienicMeasures", "city" : city}
+    return {"type": "applyHygienicMeasures", "city": city}
 
 
 def doLaunchCampaign(city):
-    return {"type" : "launchCampaign", "city" : city}
+    return {"type": "launchCampaign", "city": city}
 
 
 def costEndRound():
@@ -203,7 +200,7 @@ def costCloseConnection(rounds):
 
 def costDevelopVaccine():
     return 40
-    
+
 
 def getCostDeployVaccine():
     return 5

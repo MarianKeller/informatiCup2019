@@ -2,8 +2,6 @@ import gameWrapper as gw
 import math
 from enum import Enum
 
-climateZones = Enum('climateZones','TROPICAL SUBTROPICAL MODERATE ARCTIC')
-
 
 def climateZoneIsTropical(latitude):
     absoluteLatitude = abs(latitude)
@@ -125,7 +123,7 @@ def vectorizeState(game):
         cityStateVector.append(gw.getGovernment(game, city))
         cityStateVector.append(gw.getHygiene(game, city))
         cityStateVector.append(gw.getAwareness(game, city))
-    
+
         # dependent on city indicator
         latitude = gw.getLatitude(game, city)
         cityStateVector.append(climateZoneIsTropical(latitude))
@@ -137,7 +135,8 @@ def vectorizeState(game):
         cityStateVector.append(getHighestPathogenInfectivity(game, city)[1])
         cityStateVector.append(getHighestPathogenMobility(game, city)[1])
         cityStateVector.append(getHighestPathogenLethality(game, city)[1])
-        cityStateVector.append(round(getHighestPathogenPrevalence(game, city)[1],4))
+        cityStateVector.append(
+            round(getHighestPathogenPrevalence(game, city)[1], 4))
 
         # TODO missing indicator values
 

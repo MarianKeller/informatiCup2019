@@ -1,11 +1,9 @@
-
-#!/usr/bin/env python3
-
 from bottle import post, request, run, BaseRequest
 import json
 import gameWrapper as gw
 import preprocessing as pre
 import actor
+
 
 @post("/")
 def index():
