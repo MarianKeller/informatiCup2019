@@ -119,6 +119,9 @@ def vectorizeState(game):
             stateVec.append(gw.getPathogenMobility(game, pathogen))
             stateVec.append(gw.getPathogenDuration(game, pathogen))
             stateVec.append(gw.getPathogenLethality(game, pathogen))
+            stateVec.append(gw.getPathogenPrevalenceWorld(game, pathogen))
+
+            # dependent on pathogen and city, non-indicator
             stateVec.append(
                 gw.getPathogenPrevalenceCity(game, city, pathogen))
 
