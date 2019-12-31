@@ -38,11 +38,13 @@ def getHighestPathogenInfectivity(game, city):
     pathogens = gw.getPathogens(game, city)
     worstPathogen = None
     highestInfectivity = 0
+
     for pathogen in pathogens:
         curInfectivity = gw.getPathogenInfectivity(game, pathogen)
         if curInfectivity > highestInfectivity:
             worstPathogen = pathogen
             highestInfectivity = curInfectivity
+
     return (worstPathogen, highestInfectivity)
 
 
@@ -50,11 +52,13 @@ def getHighestPathogenMobility(game, city):
     pathogens = gw.getPathogens(game, city)
     worstPathogen = None
     highestMobility = 0
+
     for pathogen in pathogens:
         curMobility = gw.getPathogenMobility(game, pathogen)
         if curMobility > highestMobility:
             worstPathogen = pathogen
             highestMobility = curMobility
+
     return (worstPathogen, highestMobility)
 
 
@@ -62,11 +66,13 @@ def getHighestPathogenDuration(game, city):
     pathogens = gw.getPathogens(game, city)
     worstPathogen = None
     highestDuration = 0
+
     for pathogen in pathogens:
         curDuration = gw.getPathogenDuration(game, pathogen)
         if curDuration > highestDuration:
             worstPathogen = pathogen
             highestDuration = curDuration
+
     return (worstPathogen, highestDuration)
 
 
@@ -74,11 +80,13 @@ def getHighestPathogenLethality(game, city):
     pathogens = gw.getPathogens(game, city)
     worstPathogen = None
     highestLethality = 0
+
     for pathogen in pathogens:
         curLethality = gw.getPathogenLethality(game, pathogen)
         if curLethality > highestLethality:
             worstPathogen = pathogen
             highestLethality = curLethality
+
     return (worstPathogen, highestLethality)
 
 
@@ -86,18 +94,29 @@ def getHighestPathogenPrevalence(game, city):
     pathogens = gw.getPathogens(game, city)
     worstPathogen = None
     highestPrevalence = 0.0
+
     for pathogen in pathogens:
         curPrevalence = gw.getPathogenPrevalenceCity(game, city, pathogen)
         if curPrevalence > highestPrevalence:
             worstPathogen = pathogen
             highestPrevalence = curPrevalence
+
     return (worstPathogen, highestPrevalence)
 
 
 def getMaxConnectedVictims(game, city, pathogen):
-    # TODO
-    # return (worstConnection, maxVictims)
-    pass
+    connections = gw.getConnections(game, city)
+    worstConnection = connections[0]
+    maxVictims = 0
+
+    for connection in connections:
+        pathogens = gw.getPathogens(game, connection)
+        population = gw.getPopulation(game, connection)
+        if pathogen in pathogens and population > maxVictims:
+            worstConnection = connection
+            maxVictims = population
+
+    return (worstConnection, maxVictims)
 
 
 def vectorizeState(game):
@@ -149,6 +168,7 @@ def vectorizeState(game):
                 getHighestPathogenLethality(game, city)[1])
             stateList.append(
                 round(getHighestPathogenPrevalence(game, city)[1], 4))
+            stateList.append(getMaxConnectedVictims[1])
 
             # TODO missing indicator values
 
