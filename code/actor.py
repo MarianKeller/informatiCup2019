@@ -58,7 +58,6 @@ def action(game, weightMat, roundsMat):
     weightedActions = []
     for city, pathogen in gameStateDict.keys():
         inputStateVec = gameStateDict[city, pathogen]
-        print(np.shape(inputStateVec))
         actionWeightVec = np.dot(weightMat, inputStateVec)
         numberRoundsVec = np.dot(roundsMat, inputStateVec)
 
@@ -74,10 +73,12 @@ def action(game, weightMat, roundsMat):
                 city, pathogen, roundsQuarantine, roundsCloseAirport, roundsCloseConnection, connectionToClose)
             cost = actionCosts[i](
                 roundsQuarantine, roundsCloseAirport, roundsCloseConnection)
-            weightedActions.append(weight, action, cost)
+            weightedActions.append((weight, action, cost))
 
-        sortedActions = [action for action in sorted(
-            weightedActions, reverse=True)[1:]]
+        sortedActions = [action[1:] for action in sorted(
+            weightedActions, reverse=True)]
+
+        print(sortedActions)
 
         for (action, cost) in sortedActions:
             if cost <= budget:
