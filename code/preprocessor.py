@@ -1,6 +1,6 @@
-import gameWrapper as gw
 import math
-from enum import Enum
+
+import gameWrapper as gw
 
 
 def climateZoneIsTropical(latitude):

@@ -1,8 +1,8 @@
-import preprocessing as pre
 import gameWrapper as gw
+import preprocessing as pre
 
 
-def action(game):
+def action(game, recommendationVector):
     gameStateMatrix = pre.vectorizeState(game)
     for i in range(len(gameStateMatrix)):
         cityStateVector = gameStateMatrix[i]

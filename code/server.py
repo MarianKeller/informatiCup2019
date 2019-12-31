@@ -1,16 +1,17 @@
-from bottle import post, request, run, BaseRequest
 import json
+
+from bottle import BaseRequest, post, request, run
+
+import actor
 import gameWrapper as gw
 import preprocessing as pre
-import actor
 
 
 @post("/")
 def index():
     game = request.json
     print(f'round: {game["round"]}, outcome: {game["outcome"]}')
-    action = actor.action(game)
-    print("action: ", action)
+    action = gw.doEndRound()
     return action
 
 
