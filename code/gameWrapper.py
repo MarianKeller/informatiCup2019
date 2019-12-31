@@ -202,7 +202,7 @@ def costDevelopVaccine():
     return 40
 
 
-def getCostDeployVaccine():
+def costDeployVaccine():
     return 5
 
 
