@@ -1,12 +1,12 @@
 import gameWrapper as gw
-import preprocessing as pre
+import preprocessor as pre
+import numpy as np
 
 
-def action(game, recommendationVector):
-    gameStateMatrix = pre.vectorizeState(game)
-    for i in range(len(gameStateMatrix)):
-        cityStateVector = gameStateMatrix[i]
-        print("city:", gw.getCities(game)[i] + ",\t\tvector:", cityStateVector)
+# width weightMatrix = length stateVector + 1
+# height weightMatrix = number of output actions
+def action(game, weightMatrix):
+    gameStateDict = pre.vectorizeState(game)
 
     action = gw.doEndRound()
     return action

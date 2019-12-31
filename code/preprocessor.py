@@ -1,6 +1,7 @@
 import math
 
 import gameWrapper as gw
+import numpy as np
 
 
 def climateZoneIsTropical(latitude):
@@ -97,53 +98,54 @@ def vectorizeState(game):
     points = gw.getPoints(game)
     cities = gw.getCities(game)
 
-    gameState = {}
+    gameStateDict = {}
     for city in cities:
         for pathogen in gw.getPathogens(game, city):
-            stateVec = []
+            stateList = []
 
             # independent of city
-            stateVec.append(rounds)
-            stateVec.append(points)
+            stateList.append(rounds)
+            stateList.append(points)
 
             # dependent on city, non-indicator
-            stateVec.append(gw.getPopulation(game, city))
-            stateVec.append(gw.getEconomy(game, city))
-            stateVec.append(gw.getGovernment(game, city))
-            stateVec.append(gw.getHygiene(game, city))
-            stateVec.append(gw.getAwareness(game, city))
+            stateList.append(gw.getPopulation(game, city))
+            stateList.append(gw.getEconomy(game, city))
+            stateList.append(gw.getGovernment(game, city))
+            stateList.append(gw.getHygiene(game, city))
+            stateList.append(gw.getAwareness(game, city))
 
             # dependent on pathogen, non-indicator
-            stateVec.append(
+            stateList.append(
                 gw.getPathogenInfectivity(game, pathogen))
-            stateVec.append(gw.getPathogenMobility(game, pathogen))
-            stateVec.append(gw.getPathogenDuration(game, pathogen))
-            stateVec.append(gw.getPathogenLethality(game, pathogen))
-            stateVec.append(gw.getPathogenPrevalenceWorld(game, pathogen))
+            stateList.append(gw.getPathogenMobility(game, pathogen))
+            stateList.append(gw.getPathogenDuration(game, pathogen))
+            stateList.append(gw.getPathogenLethality(game, pathogen))
+            stateList.append(gw.getPathogenPrevalenceWorld(game, pathogen))
 
             # dependent on pathogen and city, non-indicator
-            stateVec.append(
+            stateList.append(
                 gw.getPathogenPrevalenceCity(game, city, pathogen))
 
             # dependent on city, indicator
             latitude = gw.getLatitude(game, city)
-            stateVec.append(climateZoneIsTropical(latitude))
-            stateVec.append(climateZoneIsSubTropical(latitude))
-            stateVec.append(climateZoneIsModerate(latitude))
-            stateVec.append(climateZoneIsArctic(latitude))
+            stateList.append(climateZoneIsTropical(latitude))
+            stateList.append(climateZoneIsSubTropical(latitude))
+            stateList.append(climateZoneIsModerate(latitude))
+            stateList.append(climateZoneIsArctic(latitude))
 
-            stateVec.append(getConnectivity(game, city))
-            stateVec.append(
+            stateList.append(getConnectivity(game, city))
+            stateList.append(
                 getHighestPathogenInfectivity(game, city)[1])
-            stateVec.append(
+            stateList.append(
                 getHighestPathogenMobility(game, city)[1])
-            stateVec.append(
+            stateList.append(
                 getHighestPathogenLethality(game, city)[1])
-            stateVec.append(
+            stateList.append(
                 round(getHighestPathogenPrevalence(game, city)[1], 4))
 
             # TODO missing indicator values
 
-            gameState[city, pathogen] = stateVec
+            stateVec = np.array[stateList]
+            gameStateDict[city, pathogen] = stateVec
 
-    return gameState
+    return gameStateDict
