@@ -83,5 +83,6 @@ def action(game, weightMat, roundsMat):
             if cost <= budget:
                 return action
 
+    return gw.doEndRound()
 
 # TODO deployVaccine and deployMedication can only be called if a vaccine or medication has been developed; check for appropriate event
