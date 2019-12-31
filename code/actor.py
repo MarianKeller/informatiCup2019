@@ -82,3 +82,6 @@ def action(game, weightMat, roundsMat):
         for (action, cost) in sortedActions:
             if cost <= budget:
                 return action
+
+
+# TODO deployVaccine and deployMedication can only be called if a vaccine or medication has been developed; check for appropriate event
