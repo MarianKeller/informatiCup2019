@@ -168,12 +168,14 @@ def vectorizeState(game):
                 getHighestPathogenLethality(game, city)[1])
             stateList.append(
                 round(getHighestPathogenPrevalence(game, city)[1], 4))
-            stateList.append(getMaxConnectedVictims[1])
+
+            # dependent on pathogen and city, indicator
+            stateList.append(getMaxConnectedVictims(game, city, pathogen)[1])
 
             # TODO missing indicator values
 
             stateList.append(1)  # bias
-            stateVec = np.array[stateList]
+            stateVec = np.array(stateList)
             gameStateDict[city, pathogen] = stateVec
 
     return gameStateDict
