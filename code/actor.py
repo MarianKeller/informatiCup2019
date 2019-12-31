@@ -65,6 +65,7 @@ def action(game, weightMat, roundsMat):
         roundsCloseAirport = numberRoundsVec[1]
         roundsCloseConnection = numberRoundsVec[2]
 
+        # TODO handle the case where connectionToClose is None (!)
         connectionToClose = pre.getMaxConnectedVictims(game, city, pathogen)[0]
 
         for i in range(len(actionWeightVec)):
@@ -77,8 +78,6 @@ def action(game, weightMat, roundsMat):
 
         sortedActions = [action[1:] for action in sorted(
             weightedActions, reverse=True)]
-
-        print(sortedActions)
 
         for (action, cost) in sortedActions:
             if cost <= budget:
