@@ -30,7 +30,22 @@ possibleActions = [
         city)
 ]
 
+# don't forget to update when a change in possibleActions is made
+endRoundPos = 0
+putUnderQuarantinePos = 1
+closeAirportPos = 2
 closeConnectionPos = 3
+developVaccinePos = 4
+deployVaccinePos = 5
+developMedicationPos = 6
+deployMedicationPos = 7
+exertInfluencePos = 8
+callElectionsPos = 9
+applyHygienicMeasuresPos = 10
+launchCampaignPos = 11
+
+numActionsWithRoundParameter = 3
+numPossibleActions = len(possibleActions)
 
 actionCosts = [
     lambda roundsQuar, roundsAir, roundsCon: gw.costEndRound(),
@@ -48,16 +63,15 @@ actionCosts = [
     lambda roundsQuar, roundsAir, roundsCon: gw.costLaunchCampaign()
 ]
 
-numActionsWithRoundParameter = 3
-numPossibleActions = len(possibleActions)
-
 
 # width weightMat = length stateVec
 # height weightMat = length possibleActions
 # width roundsMat = length stateVec
 # height roundsMat = 3
 # all of the above are optimized by the genetic algorithm
-def action(game, weightMat, roundsMat):
+
+# set doManualOptimizations = False during training, could mislead genetic algorithm
+def action(game, weightMat, roundsMat, doManualOptimizations=True):
     gameStateDict = pre.vectorizeState(game)
     budget = gw.getPoints(game)
 
@@ -73,12 +87,32 @@ def action(game, weightMat, roundsMat):
 
         connectionToClose = pre.getMaxConnectedVictims(game, city, pathogen)[0]
 
-        # TODO handle the case where medication or vaccine has not been developed but is trying to be applied
-        # TODO & other impossible / nonsensical actions
-
+        # manually set weights for impossible actions
         if connectionToClose is None:
-            # make sure any other operation is preferred
             actionWeightVec[closeConnectionPos] = float("-inf")
+
+        if doManualOptimizations:
+            if gw.hasVaccineBeenDeveloped(game, pathogen):
+                actionWeightVec[developVaccinePos] = float("-inf")
+            else:
+                actionWeightVec[deployVaccinePos] = float("-inf")
+
+            if gw.hasMedicationBeenDeveloped(game, pathogen):
+                actionWeightVec[developMedicationPos] = float("-inf")
+            else:
+                actionWeightVec[deployMedicationPos] = float("-inf")
+
+            if gw.getEconomy == 5:
+                actionWeightVec[exertInfluencePos] = float("-inf")
+
+            if gw.getGovernment == 5:
+                actionWeightVec[callElectionsPos] = float("-inf")
+
+            if gw.getHygiene == 5:
+                actionWeightVec[applyHygienicMeasuresPos] = float("-inf")
+
+            if gw.getAwareness == 5:
+                actionWeightVec[launchCampaignPos] = float("-inf")
 
         for i in range(len(actionWeightVec)):
             weight = actionWeightVec[i]
@@ -91,12 +125,10 @@ def action(game, weightMat, roundsMat):
         # first sort by cost non-descendingly to prefer cheaper action in case of same weight
         weightedActions.sort(key=lambda x: x[2])
         sortedActions = [action[1:] for action in sorted(
-            weightedActions, reverse=True)]
+            weightedActions, key=lambda x: x[0], reverse=True)]
 
         for (action, cost) in sortedActions:
             if cost <= budget:
                 return action
 
     return gw.doEndRound()
-
-# TODO deployVaccine and deployMedication can only be called if a vaccine or medication has been developed; check for appropriate event
