@@ -108,6 +108,7 @@ def getMaxConnectedVictims(game, city, pathogen):
     worstConnection = None
     maxVictims = 0
 
+    # TODO if connection is closed, will city appear as valid choice?
     connections = gw.getConnections(game, city)
     for connection in connections:
         pathogens = gw.getPathogens(game, connection)
@@ -122,7 +123,8 @@ def getMaxConnectedVictims(game, city, pathogen):
 # TODO normalize inputs (helps to reduce search space)
 
 
-inputVectorSize = 24  # update when necessary
+inputVectorSize = 26  # update when necessary
+
 
 def vectorizeState(game):
     rounds = gw.getRound(game)
@@ -174,10 +176,15 @@ def vectorizeState(game):
             stateList.append(
                 round(getHighestPathogenPrevalence(game, city)[1], 4))
 
+            # dependent on pathogen, indicator
+            stateList.append(int(gw.hasVaccineBeenDeveloped(game, pathogen)))
+            stateList.append(int(gw.hasMedicationBeenDeveloped(game, pathogen)))
+
             # dependent on pathogen and city, indicator
             stateList.append(getMaxConnectedVictims(game, city, pathogen)[1])
 
             # TODO missing indicator values
+            # TODO add indicator for maximum number of reachable victims (to close airport)
 
             stateList.append(1)  # bias
             stateVec = np.array(stateList)
