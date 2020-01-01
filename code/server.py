@@ -12,8 +12,7 @@ import numpy as np
 def index():
     game = request.json
     print(f'round: {game["round"]}, outcome: {game["outcome"]}')
-    action = actor.action(game, np.random.rand(actor.numPossibleActions, pre.inputVectorSize), np.random.randint(
-        low=1, high=10, size=(actor.numActionsWithRoundParameter, pre.inputVectorSize)))
+    action = actor.action(game, np.random.rand(actor.numPossibleActions, pre.inputVectorSize), np.random.rand(actor.numActionsWithRoundParameter, pre.inputVectorSize))
     print("\n", action, "\n")
     return action
 
