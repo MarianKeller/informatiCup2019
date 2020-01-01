@@ -119,7 +119,11 @@ def getMaxConnectedVictims(game, city, pathogen):
     return (worstConnection, maxVictims)
 
 
-# TODO normalize inputs
+# TODO normalize inputs (helps to reduce search space)
+
+
+inputVectorSize = 24  # update when necessary
+
 def vectorizeState(game):
     rounds = gw.getRound(game)
     points = gw.getPoints(game)

@@ -3,6 +3,7 @@ import numpy as np
 import gameWrapper as gw
 import preprocessor as pre
 
+
 possibleActions = [
     lambda city, pathogen, roundsQuar, roundsAir, toCity, roundsCon: gw.doEndRound(),
     lambda city, pathogen, roundsQuar, roundsAir, toCity, roundsCon: gw.doPutUnderQuarantine(
@@ -29,6 +30,8 @@ possibleActions = [
         city)
 ]
 
+closeConnectionPos = 3
+
 actionCosts = [
     lambda roundsQuar, roundsAir, roundsCon: gw.costEndRound(),
     lambda roundsQuar, roundsAir, roundsCon: gw.costPutUnderQuarantine(
@@ -44,6 +47,9 @@ actionCosts = [
     lambda roundsQuar, roundsAir, roundsCon: gw.costApplyHygienicMeasures(),
     lambda roundsQuar, roundsAir, roundsCon: gw.costLaunchCampaign()
 ]
+
+numActionsWithRoundParameter = 3
+numPossibleActions = len(possibleActions)
 
 
 # width weightMat = length stateVec
@@ -65,8 +71,14 @@ def action(game, weightMat, roundsMat):
         roundsCloseAirport = numberRoundsVec[1]
         roundsCloseConnection = numberRoundsVec[2]
 
-        # TODO handle the case where connectionToClose is None (!)
         connectionToClose = pre.getMaxConnectedVictims(game, city, pathogen)[0]
+
+        # TODO handle the case where medication or vaccine has not been developed but is trying to be applied
+        # TODO & other impossible / nonsensical actions
+
+        if connectionToClose is None:
+            # make sure any other operation is preferred
+            actionWeightVec[closeConnectionPos] = float("-inf")
 
         for i in range(len(actionWeightVec)):
             weight = actionWeightVec[i]
@@ -76,6 +88,8 @@ def action(game, weightMat, roundsMat):
                 roundsQuarantine, roundsCloseAirport, roundsCloseConnection)
             weightedActions.append((weight, action, cost))
 
+        # first sort by cost non-descendingly to prefer cheaper action in case of same weight
+        weightedActions.sort(key=lambda x: x[2])
         sortedActions = [action[1:] for action in sorted(
             weightedActions, reverse=True)]
 

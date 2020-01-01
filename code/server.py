@@ -2,7 +2,7 @@ import json
 
 from bottle import BaseRequest, post, request, run
 
-import actor
+import postprocessor as actor
 import gameWrapper as gw
 import preprocessor as pre
 import numpy as np
@@ -12,7 +12,8 @@ import numpy as np
 def index():
     game = request.json
     print(f'round: {game["round"]}, outcome: {game["outcome"]}')
-    action = actor.action(game, np.random.rand(len(actor.possibleActions), 24), np.random.randint(20, size=(3, 24)))
+    action = actor.action(game, np.random.rand(actor.numPossibleActions, pre.inputVectorSize), np.random.randint(
+        low=1, high=10, size=(actor.numActionsWithRoundParameter, pre.inputVectorSize)))
     print("\n", action, "\n")
     return action
 
