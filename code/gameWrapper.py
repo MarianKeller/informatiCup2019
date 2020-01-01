@@ -123,17 +123,15 @@ def getPathogenPrevalenceCity(game, city, pathogen):
     for event in events:
         if event["type"] == "outbreak" and event["pathogen"]["name"] == pathogen:
             return event["prevalence"]
-    return 0
+    return 0.0
 
 
-# testing revealed that prevalence is not always available; is it available at all?
-# TODO find out if a pathogen has a world-prevalence; if no, get it by iteration through all cities
 def getPathogenPrevalenceWorld(game, pathogen):
-    events = getGameEvents(game)
-    for event in events:
-        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen and "prevalence" in event:
-            return ratingToIndex(event["prevalence"])
-    return 0
+    prevalence = 0.0
+    cities = getCities(game)
+    for city in cities:
+        prevalence = prevalence + getPathogenPrevalenceCity(game, city, pathogen)
+    return prevalence
 
 
 def doEndRound():
