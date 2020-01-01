@@ -126,6 +126,7 @@ def getPathogenPrevalenceCity(game, city, pathogen):
     return 0.0
 
 
+# TODO identified as bottleneck of the program, use memoization (could lead to speedup of ~1/3)
 def getPathogenPrevalenceWorld(game, pathogen):
     prevalence = 0.0
     cities = getCities(game)
