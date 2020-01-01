@@ -130,8 +130,19 @@ def getPathogenPrevalenceWorld(game, pathogen):
     prevalence = 0.0
     cities = getCities(game)
     for city in cities:
-        prevalence = prevalence + getPathogenPrevalenceCity(game, city, pathogen)
+        prevalence = prevalence + \
+            getPathogenPrevalenceCity(game, city, pathogen)
     return prevalence
+
+
+def hasVaccineBeenDeveloped(game, pathogen):
+    # TODO
+    return False
+
+
+def hasMedicationBeenDeveloped(game, pathogen):
+    # TODO
+    return False
 
 
 def doEndRound():
