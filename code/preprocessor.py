@@ -130,10 +130,12 @@ def vectorizeState(game):
     rounds = gw.getRound(game)
     points = gw.getPoints(game)
     cities = gw.getCities(game)
+    pathogens = {city: gw.getPathogens(game, city) for city in cities}
+    # TODO manually get pathogen prevalence for each city and world here
 
     gameStateDict = {}
     for city in cities:
-        for pathogen in gw.getPathogens(game, city):
+        for pathogen in pathogens[city]:
             stateList = []
 
             # independent of city
@@ -178,7 +180,8 @@ def vectorizeState(game):
 
             # dependent on pathogen, indicator
             stateList.append(int(gw.hasVaccineBeenDeveloped(game, pathogen)))
-            stateList.append(int(gw.hasMedicationBeenDeveloped(game, pathogen)))
+            stateList.append(
+                int(gw.hasMedicationBeenDeveloped(game, pathogen)))
 
             # dependent on pathogen and city, indicator
             stateList.append(getMaxConnectedVictims(game, city, pathogen)[1])
