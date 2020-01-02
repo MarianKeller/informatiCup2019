@@ -1,3 +1,6 @@
+ratingToIndex = {"--": 1, "-": 2, "o": 3, "+": 4, "++": 5}
+
+
 def getRound(game):
     return game["round"]
 
@@ -11,10 +14,7 @@ def getPoints(game):
 
 
 def getCities(game):
-    cities = []
-    for city in game["cities"].keys():
-        cities.append(city)
-    return cities
+    return [city for city in game["cities"]]
 
 
 def getGameEvents(game):
@@ -37,60 +37,36 @@ def getConnections(game, city):
     return game["cities"][city]["connections"]
 
 
-def ratingToIndex(rating):
-    if rating == "--":
-        return 1
-
-    if rating == "-":
-        return 2
-
-    if rating == "o":
-        return 3
-
-    if rating == "+":
-        return 4
-
-    if rating == "++":
-        return 5
-
-
 def getEconomy(game, city):
-    return ratingToIndex(game["cities"][city]["economy"])
+    return ratingToIndex[game["cities"][city]["economy"]]
 
 
 def getGovernment(game, city):
-    return ratingToIndex(game["cities"][city]["government"])
+    return ratingToIndex[game["cities"][city]["government"]]
 
 
 def getHygiene(game, city):
-    return ratingToIndex(game["cities"][city]["hygiene"])
+    return ratingToIndex[game["cities"][city]["hygiene"]]
 
 
 def getAwareness(game, city):
-    return ratingToIndex(game["cities"][city]["awareness"])
+    return ratingToIndex[game["cities"][city]["awareness"]]
 
 
 def getCityEvents(game, city):
-    if "events" in game["cities"][city].keys():
-        return game["cities"][city]["events"]
-    else:
-        return []
+    return game["cities"][city].get("events", [])
 
 
 def getPathogens(game, city):
     events = getCityEvents(game, city)
-    pathogens = []
-    for event in events:
-        if event["type"] == "outbreak":
-            pathogens.append(event["pathogen"]["name"])
-    return pathogens
+    return [event["pathogen"]["name"] for event in events if event["type"] == "outbreak"]
 
 
 def getPathogenInfectivity(game, pathogen):
     events = getGameEvents(game)
     for event in events:
         if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
-            return ratingToIndex(event["pathogen"]["infectivity"])
+            return ratingToIndex[event["pathogen"]["infectivity"]]
     return 0
 
 
@@ -98,7 +74,7 @@ def getPathogenMobility(game, pathogen):
     events = getGameEvents(game)
     for event in events:
         if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
-            return ratingToIndex(event["pathogen"]["mobility"])
+            return ratingToIndex[event["pathogen"]["mobility"]]
     return 0
 
 
@@ -106,7 +82,7 @@ def getPathogenDuration(game, pathogen):
     events = getGameEvents(game)
     for event in events:
         if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
-            return ratingToIndex(event["pathogen"]["duration"])
+            return ratingToIndex[event["pathogen"]["duration"]]
     return 0
 
 
@@ -114,7 +90,7 @@ def getPathogenLethality(game, pathogen):
     events = getGameEvents(game)
     for event in events:
         if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
-            return ratingToIndex(event["pathogen"]["lethality"])
+            return ratingToIndex[event["pathogen"]["lethality"]]
     return 0
 
 
