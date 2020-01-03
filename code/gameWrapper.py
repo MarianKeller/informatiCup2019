@@ -3,12 +3,13 @@ class GameWrapper:
 
 
     @classmethod
-    def __formatPathogen(cls, pathogen):
+    def __formatPathogen(cls, pathogen, sinceRound, curRound):
         formattedPathogen = {}
         formattedPathogen["infectivity"] = cls.ratingToInt[pathogen["infectivity"]]
         formattedPathogen["mobility"] = cls.ratingToInt[pathogen["mobility"]]
         formattedPathogen["duration"] = cls.ratingToInt[pathogen["duration"]]
         formattedPathogen["lethality"] = cls.ratingToInt[pathogen["lethality"]]
+        formattedPathogen["age"] = curRound - sinceRound
         return formattedPathogen
 
 
@@ -17,7 +18,7 @@ class GameWrapper:
         self.outcome = game["outcome"]
         self.points = game["points"]
         self.cities = [city for city in game["cities"]]
-        self.gameEvents = game.get("events", [])
+        self.globalEvents = game.get("events", [])
         self.latitude = {city : game["cities"][city]["latitude"] for city in self.cities}
         self.longitude = {city : game["cities"][city]["longitude"] for city in self.cities}
         self.population = {city : game["cities"][city]["population"] for city in self.cities}
@@ -29,10 +30,10 @@ class GameWrapper:
         self.cityEvents = {city : game["cities"][city].get("events", []) for city in self.cities}
 
         self.pathogens = {}
-        for event in self.gameEvents:
+        for event in self.globalEvents:
             if event["type"] == "pathogenEncountered":
                 pathogen = event["pathogen"]
-                self.pathogens[pathogen["name"]] = GameWrapper.__formatPathogen(pathogen)
+                self.pathogens[pathogen["name"]] = GameWrapper.__formatPathogen(pathogen, event["round"], self.round)
 
         self.pathogensCity = {city : [] for city in self.cities}
         self.pathogenPrevalences = {}
@@ -42,7 +43,6 @@ class GameWrapper:
                     pathogenName = event["pathogen"]["name"]
                     self.pathogensCity[city].append(pathogenName)
                     self.pathogenPrevalences[pathogenName, city] = event["prevalence"]
-
 
     def getRound(self):
         return self.round
@@ -60,8 +60,8 @@ class GameWrapper:
         return self.cities
 
 
-    def getGameEvents(self):
-        return self.gameEvents
+    def getGlobalEvents(self):
+        return self.globalEvents
 
 
     def getPathogensGlobal(self):
@@ -124,16 +124,46 @@ class GameWrapper:
         return self.pathogens[pathogen]["lethality"]
 
 
+    def getPathogenAge(self, pathogen):
+        return self.pathogens[pathogen]["age"]
+
+
     def getPathogenPrevalenceCity(self, pathogen, city):
         return self.pathogenPrevalences[pathogen, city]
 
 
-    def hasVaccineBeenDeveloped(self, pathogen):
+    # TODO sinceRound => age could be interesting and untilRound
+    def isVaccineInDevelopment(self, pathogen):
         # TODO
         return False
 
 
-    def hasMedicationBeenDeveloped(self, pathogen):
+    # TODO sinceRound => age could be interesting
+    def isVaccineAvailable(self, pathogen):
+        # TODO
+        return False
+
+
+    # TODO sisinceRound => agenceRound could be interesting and untilRound
+    def isMedicationInDevelopment(self, pathogen):
+        # TODO
+        return False
+
+
+    # TODO sinceRound => age could be interesting
+    def isMedicationAvailable(self, pathogen):
+        # TODO
+        return False
+
+
+    # TODO sinceRound => age could be interesting
+    def isLargeScalePanic(self):
+        # TODO
+        return False
+
+    
+    # TODO sinceRound => age could be interesting
+    def isEconomicCrisis(self):
         # TODO
         return False
 

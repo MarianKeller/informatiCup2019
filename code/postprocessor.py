@@ -70,7 +70,7 @@ actionCosts = [
 # all of the above are optimized by the genetic algorithm
 
 # set doManualOptimizations = False during training, could mislead genetic algorithm
-def action(game: gw, weightMat, roundsMat, doManualOptimizations=True):
+def action(game: gw, weightMat, roundsMat, doManualOptimizations):
     budget = game.getPoints()
 
     weightedActions = []
@@ -89,12 +89,12 @@ def action(game: gw, weightMat, roundsMat, doManualOptimizations=True):
             actionWeightVec[closeConnectionPos] = float("-inf")
 
         if doManualOptimizations:
-            if game.hasVaccineBeenDeveloped(pathogen):
+            if game.isVaccineInDevelopment(pathogen) or game.isVaccineAvailable(pathogen):
                 actionWeightVec[developVaccinePos] = float("-inf")
             else:
                 actionWeightVec[deployVaccinePos] = float("-inf")
 
-            if game.hasMedicationBeenDeveloped(pathogen):
+            if game.isMedicationInDevelopment(pathogen) or game.isMedicationAvailable(pathogen):
                 actionWeightVec[developMedicationPos] = float("-inf")
             else:
                 actionWeightVec[deployMedicationPos] = float("-inf")

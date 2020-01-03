@@ -143,11 +143,10 @@ def getMaxConnectedVictims(game: GameWrapper, city, pathogen):
 # TODO normalize inputs (helps to reduce search space)
 
 
-inputVectorSize = 26  # update when necessary
+inputVectorSize = 30  # update when necessary
 
 
 def vectorizeState(game: GameWrapper):
-    rounds = game.getRound()
     points = game.getPoints()
     cities = game.getCities()
     pathogenPrevalencesGlobal = getPathogenPrevalencesGlobal(game)
@@ -158,7 +157,6 @@ def vectorizeState(game: GameWrapper):
             latitude = game.getLatitude(city)
             stateVec = np.array([
                 # independent of city
-                rounds,
                 points,
 
                 # dependent on city, non-indicator
@@ -173,6 +171,7 @@ def vectorizeState(game: GameWrapper):
                 game.getPathogenMobility(pathogen),
                 game.getPathogenDuration(pathogen),
                 game.getPathogenLethality(pathogen),
+                game.getPathogenAge(pathogen),
 
                 # dependent on pathogen and city, non-indicator
                 game.getPathogenPrevalenceCity(pathogen, city),
@@ -190,8 +189,12 @@ def vectorizeState(game: GameWrapper):
 
                 # dependent on pathogen, indicator
                 pathogenPrevalencesGlobal[pathogen],
-                int(game.hasVaccineBeenDeveloped(pathogen)),
-                int(game.hasMedicationBeenDeveloped(pathogen)),
+                int(game.isVaccineInDevelopment(pathogen)),
+                int(game.isVaccineAvailable(pathogen)),
+                int(game.isMedicationInDevelopment(pathogen)),
+                int(game.isMedicationAvailable(pathogen)),
+                int(game.isLargeScalePanic()),
+                int(game.isEconomicCrisis()),
 
                 # dependent on pathogen and city, indicator
                 getMaxConnectedVictims(game, city, pathogen)[1],

@@ -13,7 +13,8 @@ def index():
     gameDict = request.json
     game = GameWrapper(gameDict)
     print(f'round: {game.getRound()}, outcome: {game.getOutcome()}')
-    action = actor.action(game, np.random.rand(actor.numPossibleActions, pre.inputVectorSize), np.random.rand(actor.numActionsWithRoundParameter, pre.inputVectorSize))
+    action = actor.action(game, np.random.rand(actor.numPossibleActions, pre.inputVectorSize), np.random.rand(
+        actor.numActionsWithRoundParameter, pre.inputVectorSize), doManualOptimizations=True)
     print("action:", action, "\n")
     return action
 
