@@ -1,8 +1,7 @@
 import numpy as np
 
-import gameWrapper as gw
 import preprocessor as pre
-
+from gameWrapper import GameWrapper as gw
 
 possibleActions = [
     lambda city, pathogen, roundsQuar, roundsAir, toCity, roundsCon: gw.doEndRound(),
@@ -71,12 +70,12 @@ actionCosts = [
 # all of the above are optimized by the genetic algorithm
 
 # set doManualOptimizations = False during training, could mislead genetic algorithm
-def action(game, weightMat, roundsMat, doManualOptimizations=True):
+def action(game: gw, weightMat, roundsMat, doManualOptimizations=True):
     gameStateDict = pre.vectorizeState(game)
-    budget = gw.getPoints(game)
+    budget = game.getPoints()
 
     weightedActions = []
-    for city, pathogen in gameStateDict.keys():
+    for city, pathogen in gameStateDict:
         inputStateVec = gameStateDict[city, pathogen]
         actionWeightVec = np.dot(weightMat, inputStateVec)
         numberRoundsVec = np.dot(roundsMat, inputStateVec)
@@ -92,26 +91,26 @@ def action(game, weightMat, roundsMat, doManualOptimizations=True):
             actionWeightVec[closeConnectionPos] = float("-inf")
 
         if doManualOptimizations:
-            if gw.hasVaccineBeenDeveloped(game, pathogen):
+            if game.hasVaccineBeenDeveloped(pathogen):
                 actionWeightVec[developVaccinePos] = float("-inf")
             else:
                 actionWeightVec[deployVaccinePos] = float("-inf")
 
-            if gw.hasMedicationBeenDeveloped(game, pathogen):
+            if game.hasMedicationBeenDeveloped(pathogen):
                 actionWeightVec[developMedicationPos] = float("-inf")
             else:
                 actionWeightVec[deployMedicationPos] = float("-inf")
 
-            if gw.getEconomy == 5:
+            if game.getEconomy(city) == 5:
                 actionWeightVec[exertInfluencePos] = float("-inf")
 
-            if gw.getGovernment == 5:
+            if game.getGovernment(city) == 5:
                 actionWeightVec[callElectionsPos] = float("-inf")
 
-            if gw.getHygiene == 5:
+            if game.getHygiene(city) == 5:
                 actionWeightVec[applyHygienicMeasuresPos] = float("-inf")
 
-            if gw.getAwareness == 5:
+            if game.getAwareness(city) == 5:
                 actionWeightVec[launchCampaignPos] = float("-inf")
 
         for i in range(len(actionWeightVec)):

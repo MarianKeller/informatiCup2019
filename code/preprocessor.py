@@ -1,8 +1,6 @@
-import math
-
 import numpy as np
 
-import gameWrapper as gw
+from gameWrapper import GameWrapper
 
 
 def climateZoneIsTropical(latitude):
@@ -27,20 +25,20 @@ def climateZoneIsArctic(latitude):
 
 def getConnectivity(game, city):
     """Population sum of destination cities"""
-    connections = gw.getConnections(game, city)
+    connections = game.getConnections(city)
     connectivity = 0
     for connection in connections:
-        connectivity = connectivity + gw.getPopulation(game, connection)
+        connectivity += game.getPopulation(connection)
     return connectivity
 
 
-def getHighestPathogenInfectivity(game, city):
-    pathogens = gw.getPathogens(game, city)
+def getHighestPathogenInfectivity(game: GameWrapper, city):
+    pathogens = game.getPathogensCity(city)
     worstPathogen = None
     highestInfectivity = 0
 
     for pathogen in pathogens:
-        curInfectivity = gw.getPathogenInfectivity(game, pathogen)
+        curInfectivity = game.getPathogenInfectivity(pathogen)
         if curInfectivity > highestInfectivity:
             worstPathogen = pathogen
             highestInfectivity = curInfectivity
@@ -48,13 +46,13 @@ def getHighestPathogenInfectivity(game, city):
     return (worstPathogen, highestInfectivity)
 
 
-def getHighestPathogenMobility(game, city):
-    pathogens = gw.getPathogens(game, city)
+def getHighestPathogenMobility(game: GameWrapper, city):
+    pathogens = game.getPathogensCity(city)
     worstPathogen = None
     highestMobility = 0
 
     for pathogen in pathogens:
-        curMobility = gw.getPathogenMobility(game, pathogen)
+        curMobility = game.getPathogenMobility(pathogen)
         if curMobility > highestMobility:
             worstPathogen = pathogen
             highestMobility = curMobility
@@ -62,13 +60,13 @@ def getHighestPathogenMobility(game, city):
     return (worstPathogen, highestMobility)
 
 
-def getHighestPathogenDuration(game, city):
-    pathogens = gw.getPathogens(game, city)
+def getHighestPathogenDuration(game: GameWrapper, city):
+    pathogens = game.getPathogensCity(city)
     worstPathogen = None
     highestDuration = 0
 
     for pathogen in pathogens:
-        curDuration = gw.getPathogenDuration(game, pathogen)
+        curDuration = game.getPathogenDuration(pathogen)
         if curDuration > highestDuration:
             worstPathogen = pathogen
             highestDuration = curDuration
@@ -76,13 +74,13 @@ def getHighestPathogenDuration(game, city):
     return (worstPathogen, highestDuration)
 
 
-def getHighestPathogenLethality(game, city):
-    pathogens = gw.getPathogens(game, city)
+def getHighestPathogenLethality(game: GameWrapper, city):
+    pathogens = game.getPathogensCity(city)
     worstPathogen = None
     highestLethality = 0
 
     for pathogen in pathogens:
-        curLethality = gw.getPathogenLethality(game, pathogen)
+        curLethality = game.getPathogenLethality(pathogen)
         if curLethality > highestLethality:
             worstPathogen = pathogen
             highestLethality = curLethality
@@ -90,13 +88,13 @@ def getHighestPathogenLethality(game, city):
     return (worstPathogen, highestLethality)
 
 
-def getHighestPathogenPrevalence(game, city):
-    pathogens = gw.getPathogens(game, city)
+def getHighestPathogenPrevalence(game: GameWrapper, city):
+    pathogens = game.getPathogensCity(city)
     worstPathogen = None
     highestPrevalence = 0.0
 
     for pathogen in pathogens:
-        curPrevalence = gw.getPathogenPrevalenceCity(game, city, pathogen)
+        curPrevalence = game.getPathogenPrevalenceCity(pathogen, city)
         if curPrevalence > highestPrevalence:
             worstPathogen = pathogen
             highestPrevalence = curPrevalence
@@ -104,15 +102,37 @@ def getHighestPathogenPrevalence(game, city):
     return (worstPathogen, highestPrevalence)
 
 
-def getMaxConnectedVictims(game, city, pathogen):
+def getWorldPopulation(game: GameWrapper):
+    worldPopulation = 0
+    for city in game.getCities():
+        worldPopulation += game.getPopulation(city)
+    return worldPopulation
+
+
+def getPathogenPrevalencesGlobal(game: GameWrapper):
+    worldPopulation = getWorldPopulation(game)
+
+    globalPrevalence = {}
+    for pathogen in game.getPathogensGlobal():
+        globalPrevalence[pathogen] = 0.0
+
+    for city in game.getCities():
+        for pathogen in game.getPathogensCity(city):
+            globalPrevalence[pathogen] += game.getPathogenPrevalenceCity(
+                pathogen, city) * game.getPopulation(city)/worldPopulation
+    
+    return globalPrevalence
+
+
+def getMaxConnectedVictims(game: GameWrapper, city, pathogen):
     worstConnection = None
     maxVictims = 0
 
     # TODO if connection is closed, will city appear as valid choice?
-    connections = gw.getConnections(game, city)
+    connections = game.getConnections(city)
     for connection in connections:
-        pathogens = gw.getPathogens(game, connection)
-        population = gw.getPopulation(game, connection)
+        pathogens = game.getPathogensCity(connection)
+        population = game.getPopulation(connection)
         if pathogen in pathogens and population > maxVictims:
             worstConnection = connection
             maxVictims = population
@@ -126,16 +146,15 @@ def getMaxConnectedVictims(game, city, pathogen):
 inputVectorSize = 26  # update when necessary
 
 
-def vectorizeState(game):
-    rounds = gw.getRound(game)
-    points = gw.getPoints(game)
-    cities = gw.getCities(game)
-    pathogens = {city: gw.getPathogens(game, city) for city in cities}
-    # TODO manually get pathogen prevalence for each city and world here
+def vectorizeState(game: GameWrapper):
+    rounds = game.getRound()
+    points = game.getPoints()
+    cities = game.getCities()
+    pathogenPrevalencesGlobal = getPathogenPrevalencesGlobal(game)
 
     gameStateDict = {}
     for city in cities:
-        for pathogen in pathogens[city]:
+        for pathogen in game.getPathogensCity(city):
             stateList = []
 
             # independent of city
@@ -143,45 +162,39 @@ def vectorizeState(game):
             stateList.append(points)
 
             # dependent on city, non-indicator
-            stateList.append(gw.getPopulation(game, city))
-            stateList.append(gw.getEconomy(game, city))
-            stateList.append(gw.getGovernment(game, city))
-            stateList.append(gw.getHygiene(game, city))
-            stateList.append(gw.getAwareness(game, city))
+            stateList.append(game.getPopulation(city))
+            stateList.append(game.getEconomy(city))
+            stateList.append(game.getGovernment(city))
+            stateList.append(game.getHygiene(city))
+            stateList.append(game.getAwareness(city))
 
             # dependent on pathogen, non-indicator
-            stateList.append(
-                gw.getPathogenInfectivity(game, pathogen))
-            stateList.append(gw.getPathogenMobility(game, pathogen))
-            stateList.append(gw.getPathogenDuration(game, pathogen))
-            stateList.append(gw.getPathogenLethality(game, pathogen))
-            stateList.append(gw.getPathogenPrevalenceWorld(game, pathogen))
+            stateList.append(game.getPathogenInfectivity(pathogen))
+            stateList.append(game.getPathogenMobility(pathogen))
+            stateList.append(game.getPathogenDuration(pathogen))
+            stateList.append(game.getPathogenLethality(pathogen))
 
             # dependent on pathogen and city, non-indicator
-            stateList.append(
-                gw.getPathogenPrevalenceCity(game, city, pathogen))
+            stateList.append(game.getPathogenPrevalenceCity(pathogen, city))
 
             # dependent on city, indicator
-            latitude = gw.getLatitude(game, city)
+            latitude = game.getLatitude(city)
             stateList.append(climateZoneIsTropical(latitude))
             stateList.append(climateZoneIsSubTropical(latitude))
             stateList.append(climateZoneIsModerate(latitude))
             stateList.append(climateZoneIsArctic(latitude))
 
             stateList.append(getConnectivity(game, city))
-            stateList.append(
-                getHighestPathogenInfectivity(game, city)[1])
-            stateList.append(
-                getHighestPathogenMobility(game, city)[1])
-            stateList.append(
-                getHighestPathogenLethality(game, city)[1])
+            stateList.append(getHighestPathogenInfectivity(game, city)[1])
+            stateList.append(getHighestPathogenMobility(game, city)[1])
+            stateList.append(getHighestPathogenLethality(game, city)[1])
             stateList.append(
                 round(getHighestPathogenPrevalence(game, city)[1], 4))
 
             # dependent on pathogen, indicator
-            stateList.append(int(gw.hasVaccineBeenDeveloped(game, pathogen)))
-            stateList.append(
-                int(gw.hasMedicationBeenDeveloped(game, pathogen)))
+            stateList.append(pathogenPrevalencesGlobal[pathogen])
+            stateList.append(int(game.hasVaccineBeenDeveloped(pathogen)))
+            stateList.append(int(game.hasMedicationBeenDeveloped(pathogen)))
 
             # dependent on pathogen and city, indicator
             stateList.append(getMaxConnectedVictims(game, city, pathogen)[1])

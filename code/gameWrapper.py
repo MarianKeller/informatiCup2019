@@ -1,219 +1,258 @@
-ratingToIndex = {"--": 1, "-": 2, "o": 3, "+": 4, "++": 5}
+class GameWrapper:
+    ratingToInt = {"--": 1, "-": 2, "o": 3, "+": 4, "++": 5}
 
 
-def getRound(game):
-    return game["round"]
+    @classmethod
+    def __formatPathogen(cls, pathogen):
+        formattedPathogen = {}
+        formattedPathogen["infectivity"] = cls.ratingToInt[pathogen["infectivity"]]
+        formattedPathogen["mobility"] = cls.ratingToInt[pathogen["mobility"]]
+        formattedPathogen["duration"] = cls.ratingToInt[pathogen["duration"]]
+        formattedPathogen["lethality"] = cls.ratingToInt[pathogen["lethality"]]
+        return formattedPathogen
 
 
-def getOutcome(game):
-    return game["outcome"]
+    def __init__(self, game):
+        self.round = game["round"]
+        self.outcome = game["outcome"]
+        self.points = game["points"]
+        self.cities = [city for city in game["cities"]]
+        self.gameEvents = game.get("events", [])
+        self.latitude = {city : game["cities"][city]["latitude"] for city in self.cities}
+        self.longitude = {city : game["cities"][city]["longitude"] for city in self.cities}
+        self.population = {city : game["cities"][city]["population"] for city in self.cities}
+        self.connections = {city : game["cities"][city]["connections"] for city in self.cities}
+        self.economy = {city : GameWrapper.ratingToInt[game["cities"][city]["economy"]] for city in self.cities}
+        self.government = {city : GameWrapper.ratingToInt[game["cities"][city]["government"]] for city in self.cities}
+        self.hygiene = {city : GameWrapper.ratingToInt[game["cities"][city]["hygiene"]] for city in self.cities}
+        self.awareness = {city : GameWrapper.ratingToInt[game["cities"][city]["awareness"]] for city in self.cities}
+        self.cityEvents = {city : game["cities"][city].get("events", []) for city in self.cities}
 
+        self.pathogens = {}
+        for event in self.gameEvents:
+            if event["type"] == "pathogenEncountered":
+                pathogen = event["pathogen"]
+                self.pathogens[pathogen["name"]] = GameWrapper.__formatPathogen(pathogen)
 
-def getPoints(game):
-    return game["points"]
+        self.pathogensCity = {city : [] for city in self.cities}
+        self.pathogenPrevalences = {}
+        for city in self.cities:
+            for event in self.cityEvents[city]:
+                if event["type"] == "outbreak":
+                    pathogenName = event["pathogen"]["name"]
+                    self.pathogensCity[city].append(pathogenName)
+                    self.pathogenPrevalences[pathogenName, city] = event["prevalence"]
 
 
-def getCities(game):
-    return [city for city in game["cities"]]
+    def getRound(self):
+        return self.round
 
 
-def getGameEvents(game):
-    return game["events"]
+    def getOutcome(self):
+        return self.outcome
 
 
-def getLatitude(game, city):
-    return game["cities"][city]["latitude"]
+    def getPoints(self):
+        return self.points
 
 
-def getLongitude(game, city):
-    return game["cities"][city]["longitude"]
+    def getCities(self):
+        return self.cities
 
 
-def getPopulation(game, city):
-    return game["cities"][city]["population"]
+    def getGameEvents(self):
+        return self.gameEvents
 
 
-def getConnections(game, city):
-    return game["cities"][city]["connections"]
+    def getPathogensGlobal(self):
+        return self.pathogens
 
 
-def getEconomy(game, city):
-    return ratingToIndex[game["cities"][city]["economy"]]
+    def getLatitude(self, city):
+        return self.latitude[city]
 
 
-def getGovernment(game, city):
-    return ratingToIndex[game["cities"][city]["government"]]
+    def getLongitude(self, city):
+        return self.longitude[city]
 
 
-def getHygiene(game, city):
-    return ratingToIndex[game["cities"][city]["hygiene"]]
+    def getPopulation(self, city):
+        return self.population[city]
 
 
-def getAwareness(game, city):
-    return ratingToIndex[game["cities"][city]["awareness"]]
+    def getConnections(self, city):
+        return self.connections[city]
 
 
-def getCityEvents(game, city):
-    return game["cities"][city].get("events", [])
+    def getEconomy(self, city):
+        return self.economy[city]
 
 
-def getPathogens(game, city):
-    events = getCityEvents(game, city)
-    return [event["pathogen"]["name"] for event in events if event["type"] == "outbreak"]
+    def getGovernment(self, city):
+        return self.government[city]
 
 
-def getPathogenInfectivity(game, pathogen):
-    events = getGameEvents(game)
-    for event in events:
-        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
-            return ratingToIndex[event["pathogen"]["infectivity"]]
-    return 0
+    def getHygiene(self, city):
+        return self.hygiene[city]
 
 
-def getPathogenMobility(game, pathogen):
-    events = getGameEvents(game)
-    for event in events:
-        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
-            return ratingToIndex[event["pathogen"]["mobility"]]
-    return 0
+    def getAwareness(self, city):
+        return self.awareness[city]
 
 
-def getPathogenDuration(game, pathogen):
-    events = getGameEvents(game)
-    for event in events:
-        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
-            return ratingToIndex[event["pathogen"]["duration"]]
-    return 0
+    def getCityEvents(self, city):
+        return self.cityEvents[city]
 
 
-def getPathogenLethality(game, pathogen):
-    events = getGameEvents(game)
-    for event in events:
-        if event["type"] == "pathogenEncountered" and event["pathogen"]["name"] == pathogen:
-            return ratingToIndex[event["pathogen"]["lethality"]]
-    return 0
+    def getPathogensCity(self, city):
+        return self.pathogensCity[city]
 
 
-def getPathogenPrevalenceCity(game, city, pathogen):
-    events = getCityEvents(game, city)
-    for event in events:
-        if event["type"] == "outbreak" and event["pathogen"]["name"] == pathogen:
-            return event["prevalence"]
-    return 0.0
+    def getPathogenInfectivity(self, pathogen):
+        return self.pathogens[pathogen]["infectivity"]
 
 
-# TODO identified as bottleneck of the program, use memoization (could lead to speedup of ~1/3) / move to preprocessing.py
-# FIXME incorrect calculation
-def getPathogenPrevalenceWorld(game, pathogen):
-    prevalence = 0.0
-    cities = getCities(game)
-    for city in cities:
-        prevalence = prevalence + \
-            getPathogenPrevalenceCity(game, city, pathogen)
-    return prevalence
+    def getPathogenMobility(self, pathogen):
+        return self.pathogens[pathogen]["mobility"]
 
 
-def hasVaccineBeenDeveloped(game, pathogen):
-    # TODO
-    return False
+    def getPathogenDuration(self, pathogen):
+        return self.pathogens[pathogen]["duration"]
 
 
-def hasMedicationBeenDeveloped(game, pathogen):
-    # TODO
-    return False
+    def getPathogenLethality(self, pathogen):
+        return self.pathogens[pathogen]["lethality"]
 
 
-def doEndRound():
-    return {"type": "endRound"}
+    def getPathogenPrevalenceCity(self, pathogen, city):
+        return self.pathogenPrevalences[pathogen, city]
 
 
-def doPutUnderQuarantine(city, rounds):
-    return {"type": "putUnderQuarantine", "city": city, "rounds": rounds}
+    def hasVaccineBeenDeveloped(self, pathogen):
+        # TODO
+        return False
 
 
-def doCloseAirport(city, rounds):
-    return {"type": "closeAirport", "city": city, "rounds": rounds}
+    def hasMedicationBeenDeveloped(self, pathogen):
+        # TODO
+        return False
 
 
-def doCloseConnection(fromCity, toCity, rounds):
-    return {"type": "closeConnection", "fromCity": fromCity, "toCity": toCity, "rounds": rounds}
+    @staticmethod
+    def doEndRound():
+        return {"type": "endRound"}
 
 
-def doDevelopVaccine(pathogen):
-    return {"type": "developVaccine", "pathogen": pathogen}
+    @staticmethod
+    def doPutUnderQuarantine(city, rounds):
+        return {"type": "putUnderQuarantine", "city": city, "rounds": rounds}
 
 
-def doDeployVaccine(pathogen, city):
-    return {"type": "deployVaccine", "pathogen": pathogen, "city": city}
+    @staticmethod
+    def doCloseAirport(city, rounds):
+        return {"type": "closeAirport", "city": city, "rounds": rounds}
 
 
-def doDevelopMedication(pathogen):
-    return {"type": "developMedication", "pathogen": pathogen}
+    @staticmethod
+    def doCloseConnection(fromCity, toCity, rounds):
+        return {"type": "closeConnection", "fromCity": fromCity, "toCity": toCity, "rounds": rounds}
 
 
-def doDeployMedication(pathogen, city):
-    return {"type": "deployMedication", "pathogen": pathogen, "city": city}
+    @staticmethod
+    def doDevelopVaccine(pathogen):
+        return {"type": "developVaccine", "pathogen": pathogen}
 
 
-def doExertInfluence(city):
-    return {"type": "exertInfluence", "city": city}
+    @staticmethod
+    def doDeployVaccine(pathogen, city):
+        return {"type": "deployVaccine", "pathogen": pathogen, "city": city}
 
 
-def doCallElections(city):
-    return {"type": "callElections", "city": city}
+    @staticmethod
+    def doDevelopMedication(pathogen):
+        return {"type": "developMedication", "pathogen": pathogen}
 
 
-def doApplyHygienicMeasures(city):
-    return {"type": "applyHygienicMeasures", "city": city}
+    @staticmethod
+    def doDeployMedication(pathogen, city):
+        return {"type": "deployMedication", "pathogen": pathogen, "city": city}
 
 
-def doLaunchCampaign(city):
-    return {"type": "launchCampaign", "city": city}
+    @staticmethod
+    def doExertInfluence(city):
+        return {"type": "exertInfluence", "city": city}
 
 
-def costEndRound():
-    return 0
+    @staticmethod
+    def doCallElections(city):
+        return {"type": "callElections", "city": city}
 
 
-def costPutUnderQuarantine(rounds):
-    return 10 * rounds + 20
+    @staticmethod
+    def doApplyHygienicMeasures(city):
+        return {"type": "applyHygienicMeasures", "city": city}
 
 
-def costCloseAirport(rounds):
-    return 5 * rounds + 15
+    @staticmethod
+    def doLaunchCampaign(city):
+        return {"type": "launchCampaign", "city": city}
 
 
-def costCloseConnection(rounds):
-    return 3 * rounds + 3
+    @staticmethod
+    def costEndRound():
+        return 0
 
 
-def costDevelopVaccine():
-    return 40
+    @staticmethod
+    def costPutUnderQuarantine(rounds):
+        return 10 * rounds + 20
 
 
-def costDeployVaccine():
-    return 5
+    @staticmethod
+    def costCloseAirport(rounds):
+        return 5 * rounds + 15
 
 
-def costDevelopMedication():
-    return 20
+    @staticmethod
+    def costCloseConnection(rounds):
+        return 3 * rounds + 3
 
 
-def costDeployMedication():
-    return 10
+    @staticmethod
+    def costDevelopVaccine():
+        return 40
 
 
-def costExertInfluence():
-    return 3
+    @staticmethod
+    def costDeployVaccine():
+        return 5
 
 
-def costCallElections():
-    return 3
+    @staticmethod
+    def costDevelopMedication():
+        return 20
 
 
-def costApplyHygienicMeasures():
-    return 3
+    @staticmethod
+    def costDeployMedication():
+        return 10
 
 
-def costLaunchCampaign():
-    return 3
+    @staticmethod
+    def costExertInfluence():
+        return 3
+
+
+    @staticmethod
+    def costCallElections():
+        return 3
+
+
+    @staticmethod
+    def costApplyHygienicMeasures():
+        return 3
+
+
+    @staticmethod
+    def costLaunchCampaign():
+        return 3
