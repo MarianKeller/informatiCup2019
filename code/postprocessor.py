@@ -71,12 +71,10 @@ actionCosts = [
 
 # set doManualOptimizations = False during training, could mislead genetic algorithm
 def action(game: gw, weightMat, roundsMat, doManualOptimizations=True):
-    gameStateDict = pre.vectorizeState(game)
     budget = game.getPoints()
 
     weightedActions = []
-    for city, pathogen in gameStateDict:
-        inputStateVec = gameStateDict[city, pathogen]
+    for city, pathogen, inputStateVec in pre.vectorizeState(game):
         actionWeightVec = np.dot(weightMat, inputStateVec)
         numberRoundsVec = np.dot(roundsMat, inputStateVec)
 
