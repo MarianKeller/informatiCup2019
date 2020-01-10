@@ -78,9 +78,9 @@ def action(game: gw, weightMat, roundsMat, doManualOptimizations):
         actionWeightVec = np.dot(weightMat, inputStateVec)
         numberRoundsVec = np.dot(roundsMat, inputStateVec)
 
-        roundsQuarantine = numberRoundsVec[0]
-        roundsCloseAirport = numberRoundsVec[1]
-        roundsCloseConnection = numberRoundsVec[2]
+        roundsQuarantine = int(round(numberRoundsVec[0]))
+        roundsCloseAirport = int(round(numberRoundsVec[1]))
+        roundsCloseConnection = int(round(numberRoundsVec[2]))
 
         connectionToClose = pre.getMaxConnectedVictims(game, city, pathogen)[0]
 
