@@ -70,7 +70,7 @@ actionCosts = [
 # all of the above are optimized by the genetic algorithm
 
 # set doManualOptimizations = False during training, could mislead genetic algorithm
-def action(game: gw, weightMat, roundsMat, doManualOptimizations):
+def action(game: gw, weightMat, roundsMat, doManualOptimizations, safetyAdjustments=True):
     budget = game.getPoints()
 
     weightedActions = []
@@ -84,11 +84,11 @@ def action(game: gw, weightMat, roundsMat, doManualOptimizations):
 
         connectionToClose = pre.getMaxConnectedVictims(game, city, pathogen)[0]
 
-        # manually set weights for impossible actions
-        if connectionToClose is None:
-            actionWeightVec[closeConnectionPos] = float("-inf")
+        # manually set weights for impossible/nonsensical actions
+        if safetyAdjustments:
+            if connectionToClose is None:
+                actionWeightVec[closeConnectionPos] = float("-inf")
 
-        if doManualOptimizations:
             if game.isVaccineInDevelopment(pathogen) or game.isVaccineAvailable(pathogen):
                 actionWeightVec[developVaccinePos] = float("-inf")
             else:
@@ -99,6 +99,9 @@ def action(game: gw, weightMat, roundsMat, doManualOptimizations):
             else:
                 actionWeightVec[deployMedicationPos] = float("-inf")
 
+        # TODO if people of city already vaccinated, then don't vaccinate them again
+
+        if doManualOptimizations:
             if game.getEconomy(city) == 5:
                 actionWeightVec[exertInfluencePos] = float("-inf")
 
