@@ -1,2 +1,53 @@
 - allow negative parameters in genetic algorithm
+
+
 - call program with seeds to make calculation of fitness value deterministic
+
+
+- also tell program to wait as long as possible for server response
+
+
+- city events:
+'outbreak',
+'electionsCalled',
+'antiVaccinationism',
+'quarantine',
+'influenceExerted',
+'campaignLaunched',
+'connectionClosed',
+'airportClosed',
+'hygienicMeasuresApplied',
+'bioTerrorism',
+'uprising'
+
+examples:
+'outbreak': {'type': 'outbreak', 'pathogen': {'name': 'Procrastinalgia', 'infectivity': '-', 'mobility': '--', 'duration': '++', 'lethality': '--'}, 'prevalence': 0.22348484848484848, 'sinceRound': 1},
+'hygienicMeasuresApplied': {'type': 'hygienicMeasuresApplied', 'round': 1},
+'electionsCalled': {'type': 'electionsCalled', 'round': 2},
+'influenceExerted': {'type': 'influenceExerted', 'round': 2},
+'connectionClosed': {'type': 'connectionClosed', 'city': 'Melbourne', 'sinceRound': 3, 'untilRound': 9},
+'campaignLaunched': {'type': 'campaignLaunched', 'round': 3},
+'airportClosed': {'type': 'airportClosed', 'sinceRound': 5, 'untilRound': 12},
+'quarantine': {'type': 'quarantine', 'sinceRound': 12, 'untilRound': 17},
+'uprising': {'type': 'uprising', 'sinceRound': 14, 'participants': 205},
+'antiVaccinationism': {'type': 'antiVaccinationism', 'sinceRound': 34},
+'bioTerrorism': {'type': 'bioTerrorism', 'round': 31, 'pathogen': {'name': 'Endoictus', 'infectivity': '-', 'mobility': 'o', 'duration': '+', 'lethality': '--'}}}
+
+
+- global events:
+'pathogenEncountered'
+'vaccineInDevelopment'
+'medicationInDevelopment'
+'vaccineAvailable'
+'medicationAvailable'
+'economicCrisis'
+'largeScalePanic'
+
+examples:
+'pathogenEncountered': {'type': 'pathogenEncountered', 'pathogen': {'name': 'Procrastinalgia', 'infectivity': '-', 'mobility': '--', 'duration': '++', 'lethality': '--'}, 'round': 1},
+'largeScalePanic': {'type': 'largeScalePanic', 'sinceRound': 2},
+'medicationInDevelopment': {'type': 'medicationInDevelopment', 'pathogen': {'name': 'Phagum vidiianum', 'infectivity': 'o', 'mobility': 'o', 'duration': '+', 'lethality': '+'}, 'sinceRound': 2, 'untilRound': 5},
+'medicationAvailable': {'type': 'medicationAvailable', 'pathogen': {'name': 'Phagum vidiianum', 'infectivity': 'o', 'mobility': 'o', 'duration': '+', 'lethality': '+'}, 'sinceRound': 5},
+'vaccineInDevelopment': {'type': 'vaccineInDevelopment', 'pathogen': {'name': 'Phagum vidiianum', 'infectivity': 'o', 'mobility': 'o', 'duration': '+', 'lethality': '+'}, 'sinceRound': 11, 'untilRound': 17},
+'vaccineAvailable': {'type': 'vaccineAvailable', 'pathogen': {'name': 'Phagum vidiianum', 'infectivity': 'o', 'mobility': 'o', 'duration': '+', 'lethality': '+'}, 'sinceRound': 17},
+'economicCrisis': {'type': 'economicCrisis', 'sinceRound': 4}}
