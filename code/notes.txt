@@ -1,0 +1,2 @@
+- allow negative parameters in genetic algorithm
+- call program with seeds to make calculation of fitness value deterministic
