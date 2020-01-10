@@ -19,7 +19,6 @@ maxRounds = 100
 minPoints = 0
 maxPoints = 40 + (maxRounds - 2) * 20
 
-
 minAttribute = 1
 maxAttribute = 5
 
