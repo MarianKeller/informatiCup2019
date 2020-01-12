@@ -28,47 +28,41 @@ class Population:
         return [individual.genes for individual in ratedGeneration]
 
     @staticmethod
-    def __array_in(arr, list_of_arr):
-        for elem in list_of_arr:
-            if np.array_equal(arr, elem):
-                return True
-        return False
+    def __rouletteSelect(ratedGeneration, cumulativeFitness):
+        pick = np.random.uniform(0, cumulativeFitness)
+        current = 0
+        for individual in ratedGeneration:
+            current += individual.fitness
+            if current > pick:
+                return individual
+
+    @staticmethod
+    def __cumulativeFitness(ratedGeneration):
+        return sum(individual.fitness for individual in ratedGeneration)
 
     @staticmethod
     def __select(ratedGeneration, numSurvivors, elitism):
         """using roulette wheel selection"""
-        cumulativeFitness = sum(
-            individual.fitness for individual in ratedGeneration)
-        wheel = [individual.fitness /
-                 cumulativeFitness for individual in ratedGeneration]
-
-        survivorIndices = np.random.choice(
-            len(ratedGeneration), size=numSurvivors, p=wheel)
-        survivors = [ratedGeneration[i] for i in survivorIndices]
-
+        cumulativeFitness = Population.__cumulativeFitness(ratedGeneration)
+        survivors = [Population.__rouletteSelect(
+            ratedGeneration, cumulativeFitness) for i in range(numSurvivors)]
+        survivors.sort(key=lambda x: x.fitness, reverse=True)
         if elitism:
             elit = ratedGeneration[0]
-            if not Population.__array_in(elit, survivors):
+            if survivors[0].fitness != elit.fitness:
                 low = 0
                 high = len(survivors)-1
                 rnd = 0 if low == high else np.random.randint(
                     low=low, high=high)
                 survivors[rnd] = elit
-        survivors.sort(key=lambda x: x.fitness, reverse=True)
-        return list(survivors)
+                survivors.sort(key=lambda x: x.fitness, reverse=True)
+        return survivors
 
     @staticmethod
     def __pair(ratedGeneration, numBabies):
         """using roulette wheel selection"""
-        cumulativeFitness = sum(
-            individual.fitness for individual in ratedGeneration)
-        wheel = [individual.fitness /
-                 cumulativeFitness for individual in ratedGeneration]
-        fatherIndices = np.random.choice(
-            len(ratedGeneration), size=numBabies, p=wheel)
-        motherIndices = np.random.choice(
-            len(ratedGeneration), size=numBabies, p=wheel)
-        return [(ratedGeneration[fatherIndices[i]], ratedGeneration[motherIndices[i]]) for i in range(numBabies)]
+        cumulativeFitness = Population.__cumulativeFitness(ratedGeneration)
+        return [(Population.__rouletteSelect(ratedGeneration, cumulativeFitness), Population.__rouletteSelect(ratedGeneration, cumulativeFitness)) for i in range(numBabies)]
 
     @staticmethod
     def __mate(parentList):
@@ -147,10 +141,10 @@ class Population:
         self.__evolve = False
 
 
-p = Population(fitnessFunction=lambda x: sum(map(sum, x)), populationSize=100,
-               lowerLimit=0, upperLimit=1000, shape=(10,10), elitism=True, selectionPressure=0.5, mutationRate=0.01)
+p = Population(fitnessFunction=lambda x: sum(map(sum, x))/900000, populationSize=200,
+               lowerLimit=0, upperLimit=1000, shape=(30, 30), elitism=True, mutationRate=0.05, selectionPressure=0.5)
 p.startEvolution()
-time.sleep(60)
+while(len(p.graveyard) < 1000):
+    time.sleep(1)
 p.haltEvolution()
-print(p.graveyard[0][0])
-print(p.graveyard[-1][0])
+print(p.graveyard[-1][0].fitness)
