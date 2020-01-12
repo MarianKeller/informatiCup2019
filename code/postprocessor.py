@@ -70,13 +70,13 @@ actionCosts = [
 # all of the above are optimized by the genetic algorithm
 
 # set doManualOptimizations = False during training, could mislead genetic algorithm
-def action(game: gw, weightMat, roundsMat, doManualOptimizations, safetyAdjustments=True):
+def action(game: gw, weightMat, doManualOptimizations, safetyAdjustments=True):
     budget = game.getPoints()
 
     weightedActions = []
     for city, pathogen, inputStateVec in pre.vectorizeState(game):
         actionWeightVec = np.dot(weightMat, inputStateVec)
-        numberRoundsVec = np.dot(roundsMat, inputStateVec)
+        numberRoundsVec = [1,1,1] # Not implemented for simplicity, originally: np.dot(roundsMat, inputStateVec)
 
         roundsQuarantine = int(round(numberRoundsVec[0]))
         roundsCloseAirport = int(round(numberRoundsVec[1]))
