@@ -85,7 +85,7 @@ gameServerUrl = "http://localhost:50123"
 gameServerIP = "0.0.0.0"
 def launchGameServer():
     gs = gameServer()
-    route("/", "POST", ts.startGameWithGenome)
+    route("/", "POST", gs.startGameWithGenome)
     BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
     run(host=gameServerIP, port=gameServerPort, quiet=True)
 
