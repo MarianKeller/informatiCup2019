@@ -13,7 +13,7 @@ possibleActions = [
         city, toCity, roundsCon),
     lambda city, pathogen, roundsQuar, roundsAir, roundsCon, toCity: gw.doDevelopVaccine(
         pathogen),
-    lambda city, pathogen, roundsQuar, roundsAir, rounroundsCondsClose, toCity: gw.doDeployVaccine(
+    lambda city, pathogen, roundsQuar, roundsAir, roundsCon, toCity: gw.doDeployVaccine(
         pathogen, city),
     lambda city, pathogen, roundsQuar, roundsAir, roundsCon, toCity: gw.doDevelopMedication(
         pathogen),
@@ -129,6 +129,7 @@ def action(game: gw, weightMat, doManualOptimizations, safetyAdjustments=True):
 
         for (action, cost) in sortedActions:
             if cost <= budget:
-                return action
+                if np.random.rand() > 0.2:  # add some noise to decision to prevent endless loops
+                    return action
 
     return gw.doEndRound()
