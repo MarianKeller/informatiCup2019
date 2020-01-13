@@ -7,6 +7,8 @@ import postprocessor as actor
 from gameWrapper import GameWrapper
 import preprocessor as pre
 
+gameFilePath = "ic20_windows"
+
 class playerServer(object):
     def __init__(self, id="game1", count=1, trainer=None, genome=None):
         self.hasTrainer = (trainer != None)
@@ -21,14 +23,15 @@ class playerServer(object):
         game = GameWrapper(gameDict)
         print(f'round: {game.getRound()}, outcome: {game.getOutcome()}')
         if(game.getOutcome() == 'pending'):
-            action = actor.action(game, np.random.rand(actor.numPossibleActions, pre.inputVectorSize), self.genome, doManualOptimizations=(not self.hasTrainer))
-            #action = GameWrapper.doEndRound() TODO: remove this line
+            action = actor.action(game, self.genome, doManualOptimizations=(not self.hasTrainer))
+            #action = GameWrapper.doEndRound() # TODO: remove this line
+            print("numPossibleActions: ", actor.numPossibleActions, "inputVectorSize: ", pre.inputVectorSize)
             print(self.genomeId, str(self.genomeCount), " action:", action, "\n")
             return action
         else:
             if self.hasTrainer:
                 print(self.genomeId, str(self.genomeCount), " from trainer: ", game.getOutcome(), " round: ", game.getRound())
-                self.myTrainer.collectGameResult(game.getOutcome(), game.getRound())
+                self.myTrainer.collectGameResult(self.genomeCount, game.getOutcome(), game.getRound())
             else:
                 print(game.getOutcome(), " round: ", game.getRound())
         return ""
@@ -39,11 +42,12 @@ class trainingServer(object):
         self.genomeId = params["genomeId"]
         self.callbackUrl = params["callbackUrl"]
         self.runCount = params["runCount"]
-        self.genome = params["genome"]
+        self.genome = np.array(params["genome"])
 
 
     def startGameWithGenome(self):
         params = request.json
+        print(params)
         self.parseRequest(params)
 
         self.gameResults = []
@@ -52,24 +56,24 @@ class trainingServer(object):
             ps = playerServer(self.genomeId, i, self, self.genome)
             path = "/" + self.genomeId + str(i)
             route(path, "POST", ps.gamePlayer)
-            subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path, "-o", "logs/log.txt"])
+            subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path, 
+                "-o", "logs/log_", self.genomeId, str(i), ".txt"])
             print(self.genomeId, " playing at: ", path)
 
-        return "games started"
+        return {"id" : self.genomeId, "state" : "started"}
 
 
-    def collectGameResult(self, result, rounds):
-        self.gameResults.append([result, rounds])
+    def collectGameResult(self, genomeNr, result, rounds):
+        self.gameResults.append([genomeNr, result, rounds])
         if len(self.gameResults) >= self.runCount:
             self.returnGameResults()
 
 
     def returnGameResults(self):
-        postData = json.dumps(self.gameResults)
-        requests.post(self.callbackUrl, postData)
+        jsonGameResults = {"genomeId" : self.genomeId, "gameResults" : self.gameResults}
+        requests.post(self.callbackUrl, json=jsonGameResults)
 
 
-gameFilePath = "ic20_windows"
 trainingServerPort = 50124
 trainingServerUrl = "http://localhost:50124"
 trainingServerIP = "0.0.0.0"
