@@ -1,3 +1,5 @@
+# TODO rename to fitnessServer.py and class to FitnessServer
+
 import json
 from hashlib import blake2s
 
@@ -24,7 +26,6 @@ class geneticServer(object):
 
     def __init__(self):
         self.genomeFitnessDictionary = {}
-        pass
 
     def launchCallbackServer(self, path):
         route(path, "POST", self.computeFitness)
@@ -57,6 +58,7 @@ class geneticServer(object):
         return genomeId
 
     def newTrainingCampaign(self):
+        # TODO
         pass
 
 
