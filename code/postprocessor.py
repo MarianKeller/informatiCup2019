@@ -129,7 +129,7 @@ def action(game: gw, weightMat, doManualOptimizations, safetyAdjustments=True):
 
         for (action, cost) in sortedActions:
             if cost <= budget:
-                if np.random.rand() > 0.2:  # add some noise to decision to prevent endless loops
+                if np.random.rand() > 0.2:  # add some noise to decision to prevent endless loops # FIXME why?
                     return action
 
     return gw.doEndRound()
