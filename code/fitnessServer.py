@@ -1,5 +1,3 @@
-# TODO rename to fitnessServer.py and class to FitnessServer
-
 import json
 from hashlib import blake2s
 
@@ -22,7 +20,7 @@ def hashBlake2(val, hSize=32):
     return h.hexdigest()
 
 
-class geneticServer(object):
+class FitnessServer(object):
 
     def __init__(self):
         self.genomeFitnessDictionary = {}
@@ -66,7 +64,7 @@ def resultReady(genomeId, medianFitness):
     print("result: ", medianFitness)
 
 
-genServ = geneticServer()
-genServ.evaluateGenome(numpy.random.rand(12, 31), resultReady)
+fitServ = fitnessServer()
+fitServ.evaluateGenome(numpy.random.rand(12, 31), resultReady)
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 run(host=geneticServerIP, port=geneticServerPort, quiet=True)
