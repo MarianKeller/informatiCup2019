@@ -1,3 +1,6 @@
+- if using DEAP with binary representation, consider using Gray Code
+
+
 - allow negative parameters in genetic algorithm
 
 
