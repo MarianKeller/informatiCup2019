@@ -19,6 +19,7 @@ class Population:
 
     @staticmethod
     def __rate(fitnessFunction, generation):
+        # TODO make class; directly call fitness function that rates whole generation at once by updating the RatedIndividual class if fitness == None
         RatedIndividual = namedtuple(
             'RatedIndividual', ['fitness', 'genes'])
         return [RatedIndividual(fitnessFunction(individual), individual) for individual in generation]
@@ -55,12 +56,14 @@ class Population:
                 rnd = 0 if low == high else np.random.randint(
                     low=low, high=high)
                 survivors[rnd] = elit
+                # TODO do not sort again, just remove survivors[rnd] and insert elit at beginning of list
                 survivors.sort(key=lambda x: x.fitness, reverse=True)
         return survivors
 
     @staticmethod
     def __pair(ratedGeneration, numBabies):
         """using roulette wheel selection"""
+        # TODO use tournament selection; introduce self.tournamentSize member
         cumulativeFitness = Population.__cumulativeFitness(ratedGeneration)
         return [(Population.__rouletteSelect(ratedGeneration, cumulativeFitness), Population.__rouletteSelect(ratedGeneration, cumulativeFitness)) for i in range(numBabies)]
 
@@ -99,7 +102,7 @@ class Population:
         self.mutationRate = mutationRate
         self.elitism = elitism
         self.curGeneration = curGeneration
-        self.graveyard = graveyard
+        self.graveyard = graveyard  # TODO stream graveyard to a file and make lastGeneration field
         self.__evolve = True
 
     def nextGeneration(self):
