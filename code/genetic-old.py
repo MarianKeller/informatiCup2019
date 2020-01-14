@@ -12,51 +12,54 @@ from bottle import BaseRequest, post, request, route, run
 
 from preprocessor import inputVectorSize
 from postprocessor import numPossibleActions
+from time import sleep
+
+from individual import Individual
 
 
 class Population:
     @staticmethod
     def __createIndividual(lowerLimit, upperLimit, shape):
-        return np.random.uniform(low=lowerLimit, high=upperLimit, size=shape)
+        return Individual(np.random.uniform(low=lowerLimit, high=upperLimit, size=shape))
 
     @staticmethod
     def __createPopulation(populationSize, lowerLimit, upperLimit, shape: Tuple[int, ...]):
         return [Population.__createIndividual(lowerLimit, upperLimit, shape) for i in range(populationSize)]
 
-    @staticmethod
+    # TODO delete
+    # @staticmethod
     def __rate(fitnessFunction, generation):
-        # TODO make class; directly call fitness function that rates whole generation at once by updating the RatedIndividual class if fitness == None
-        RatedIndividual = namedtuple(
-            'RatedIndividual', ['fitness', 'genes'])
-        fitnesses = fitnessFunction(generation)
-        return [RatedIndividual(individual[0], individual[1]) for individual in zip(fitnesses, generation)]
+        pass
+        # fitnesses = fitnessFunction(generation)
+        # return [RatedIndividual(individual[0], individual[1]) for individual in zip(fitnesses, generation)]
+
+        # TODO delete
+        # @staticmethod
+        # def __unrate(ratedGeneration):
+        #     return [individual.genes for individual in ratedGeneration]
 
     @staticmethod
-    def __unrate(ratedGeneration):
-        return [individual.genes for individual in ratedGeneration]
-
-    @staticmethod
-    def __rouletteSelect(ratedGeneration, cumulativeFitness):
+    def __rouletteSelect(population, cumulativeFitness):
         pick = np.random.uniform(0, cumulativeFitness)
         current = 0
-        for individual in ratedGeneration:
+        for individual in population:
             current += individual.fitness
             if current > pick:
                 return individual
 
     @staticmethod
-    def __cumulativeFitness(ratedGeneration):
-        return sum(individual.fitness for individual in ratedGeneration)
+    def __cumulativeFitness(population):
+        return sum(individual.fitness for individual in population)
 
     @staticmethod
-    def __select(ratedGeneration, numSurvivors, elitism):
+    def __select(population, numSurvivors, elitism):
         """using roulette wheel selection"""
-        cumulativeFitness = Population.__cumulativeFitness(ratedGeneration)
+        cumulativeFitness = Population.__cumulativeFitness(population)
         survivors = [Population.__rouletteSelect(
-            ratedGeneration, cumulativeFitness) for i in range(numSurvivors)]
+            population, cumulativeFitness) for i in range(numSurvivors)]
         survivors.sort(key=lambda x: x.fitness, reverse=True)
         if elitism:
-            elit = ratedGeneration[0]
+            elit = population[0]
             if survivors[0].fitness != elit.fitness:
                 low = 0
                 high = len(survivors)-1
@@ -68,20 +71,20 @@ class Population:
         return survivors
 
     @staticmethod
-    def __pair(ratedGeneration, numBabies):
+    def __pair(population, numBabies):
         """using roulette wheel selection"""
         # TODO use tournament selection; introduce self.tournamentSize member
-        cumulativeFitness = Population.__cumulativeFitness(ratedGeneration)
-        return [(Population.__rouletteSelect(ratedGeneration, cumulativeFitness), Population.__rouletteSelect(ratedGeneration, cumulativeFitness)) for i in range(numBabies)]
+        cumulativeFitness = Population.__cumulativeFitness(population)
+        return [(Population.__rouletteSelect(population, cumulativeFitness), Population.__rouletteSelect(population, cumulativeFitness)) for i in range(numBabies)]
 
     @staticmethod
     def __mate(parentList):
         babies = []
         for father, mother in parentList:
-            baby = np.empty(father.genes.shaprintpe)
+            baby = Individual(np.empty(father.genes.shape))
             for i in range(baby.shape[0]):
                 choice = np.random.choice([False, True])
-                baby[i] = father.genes[i] if choice else mother.genes[i]
+                baby.genome[i] = father.genome[i] if choice else mother.genome[i]
             babies.append(baby)
         return babies
 
@@ -110,59 +113,48 @@ class Population:
         self.elitism = elitism
         self.generation = 0
         self.activePopulation = activePopulation
-        # TODO stream graveyard to a file and make lastGeneration field
-        self.graveyard = graveyard
-        self.__evolve = True
+        self.lastGeneration = None
 
-    def nextGeneration(self):
+    def __cleanup(self):
+        self.activePopulation.sort(key=lambda x: x.fitness, reverse=True)
         self.generation += 1
+        self.lastGeneration = copy.deepcopy(self.activePopulation)
+
+    def __evaluateGeneration(self, callback):
+        self.fitnessFunction(self.activePopulation, callback=callback)
+
+    def __applyGeneticOperators(self):
         finalPopulationSize = len(self.activePopulation)
         numSurvivors = math.ceil(
             (1 - self.selectionPressure) * len(self.activePopulation))
         numBabies = finalPopulationSize - numSurvivors
 
-        ratedGeneration = Population.__rate(
-            self.fitnessFunction, self.activePopulation)
-        ratedGeneration.sort(key=lambda x: x.fitness, reverse=True)
-        oldGeneration = deepcopy(ratedGeneration)
-        self.graveyard.append(oldGeneration)
-
-        ratedGeneration = Population.__select(
-            ratedGeneration, numSurvivors, self.elitism)
-        parentList = Population.__pair(ratedGeneration, numBabies)
+        population = Population.__select(
+            self.activePopulation, numSurvivors, self.elitism)
+        parentList = Population.__pair(population, numBabies)
         babies = Population.__mate(parentList)
-        newGeneration = Population.__unrate(ratedGeneration)
         newGeneration.extend(babies)
         newGeneration = Population.__mutate(
             newGeneration, self.lowerLimit, self.upperLimit, self.mutationRate, self.elitism)
 
         self.activePopulation = newGeneration
 
-    def __startEvolution(self):
+    def evolve(self):
         if self.activePopulation is None:
             self.activePopulation = Population.__createPopulation(
                 self.populationSize, self.lowerLimit, self.upperLimit, self.shape)
-        while(self.__evolve):
-            self.nextGeneration()
+        else:
+            self.__applyGeneticOperators()
+        self.__evaluateGeneration(callback=__cleanup)
 
-    def startEvolution(self):
-        self.__evolve = True
-        thread = threading.Thread(target=self.__startEvolution)
-        thread.start()
-
-    def haltEvolution(self):
-        self.__evolve = False
 
 fs = FitnessServer()
 
 #BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 #run(host=FitnessServer.geneticServerIP, port=FitnessServer.geneticServerPort, quiet=True)
 
-p = Population(fitnessFunction=lambda x: fs.getSyncFitnessList(x), populationSize=100,
+p = Population(fitnessFunction=lambda x: fs.getAsyncFitnessList(x), populationSize=100,
                lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), elitism=True, mutationRate=0.01, selectionPressure=0.5)
-p.startEvolution()
-# TODO
-# while(len(p.graveyard) < 1000):
-#     time.sleep(1)
-# p.haltEvolution()
-# print(p.graveyard[-1][0].fitness)
+
+for i in range(2):
+    p.evolve()
