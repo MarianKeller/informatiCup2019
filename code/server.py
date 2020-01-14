@@ -88,9 +88,10 @@ gameServerPort = 50123
 gameServerUrl = "http://localhost:50123"
 gameServerIP = "0.0.0.0"
 def launchGameServer():
-    gs = gameServer()
+    gs = playerServer(genome=np.random.rand(actor.numPossibleActions, pre.inputVectorSize))
     route("/", "POST", gs.gamePlayer)
     BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
     run(host=gameServerIP, port=gameServerPort, quiet=True)
 
-launchTrainingServer()
+#launchTrainingServer()
+launchGameServer()
