@@ -145,7 +145,7 @@ class Population:
                 self.populationSize, self.lowerLimit, self.upperLimit, self.shape)
         else:
             self.__applyGeneticOperators()
-        self.__evaluateGeneration(callback=__cleanup)
+        self.__evaluateGeneration(callback=self.__cleanup)
 
 
 fs = FitnessServer()
@@ -159,3 +159,5 @@ p = Population(fitnessFunction=lambda x: fs.getAsyncFitnessList(x), populationSi
 
 for i in range(2):
     p.evolve()
+
+print(p.lastGeneration[0].fitess)
