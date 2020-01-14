@@ -108,19 +108,21 @@ class Population:
         self.selectionPressure = selectionPressure
         self.mutationRate = mutationRate
         self.elitism = elitism
-        self.curGeneration = curGeneration
+        self.generation = 0
+        self.activePopulation = activePopulation
         # TODO stream graveyard to a file and make lastGeneration field
         self.graveyard = graveyard
         self.__evolve = True
 
     def nextGeneration(self):
-        finalPopulationSize = len(self.curGeneration)
+        print(self.generation) # TODO delete
+        finalPopulationSize = len(self.activePopulation)
         numSurvivors = math.ceil(
-            (1 - self.selectionPressure) * len(self.curGeneration))
+            (1 - self.selectionPressure) * len(self.activePopulation))
         numBabies = finalPopulationSize - numSurvivors
 
         ratedGeneration = Population.__rate(
-            self.fitnessFunction, self.curGeneration)
+            self.fitnessFunction, self.activePopulation)
         ratedGeneration.sort(key=lambda x: x.fitness, reverse=True)
         oldGeneration = deepcopy(ratedGeneration)
         self.graveyard.append(oldGeneration)
@@ -134,11 +136,11 @@ class Population:
         newGeneration = Population.__mutate(
             newGeneration, self.lowerLimit, self.upperLimit, self.mutationRate, self.elitism)
 
-        self.curGeneration = newGeneration
+        self.activePopulation = newGeneration
 
     def __startEvolution(self):
-        if self.curGeneration == None:
-            self.curGeneration = Population.__createPopulation(
+        if self.activePopulation == None:
+            self.activePopulation = Population.__createPopulation(
                 self.populationSize, self.lowerLimit, self.upperLimit, self.shape)
         while(self.__evolve):
             self.nextGeneration()
@@ -156,10 +158,11 @@ BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 run(host=fitnessServer.geneticServerIP,
     port=fitnessServer.geneticServerPort, quiet=True)
 
-p = Population(fitnessFunction=lambda x: fitnessServer().getSyncFitnessList(x), populationSize=200,
-               lowerLimit=-1, upperLimit=1, shape=(inputVectorSize, numPossibleActions), elitism=True, mutationRate=0.05, selectionPressure=0.5)
+p = Population(fitnessFunction=lambda x: fitnessServer().getSyncFitnessList(x), populationSize=100,
+               lowerLimit=-1, upperLimit=1, shape=(inputVectorSize, numPossibleActions), elitism=True, mutationRate=0.01, selectionPressure=0.5)
 p.startEvolution()
-while(len(p.graveyard) < 1000):
-    time.sleep(1)
-p.haltEvolution()
-print(p.graveyard[-1][0].fitness)
+# TODO
+# while(len(p.graveyard) < 1000):
+#     time.sleep(1)
+# p.haltEvolution()
+# print(p.graveyard[-1][0].fitness)
