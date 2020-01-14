@@ -7,7 +7,7 @@ from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 
-import fitnessServer
+from fitnessServer import FitnessServer
 from bottle import BaseRequest, post, request, route, run
 
 from preprocessor import inputVectorSize
@@ -109,6 +109,7 @@ class Population:
         self.mutationRate = mutationRate
         self.elitism = elitism
         self.generation = 0
+        self.activePopulation = activePopulation
         # TODO stream graveyard to a file and make lastGeneration field
         self.graveyard = graveyard
         self.__evolve = True
@@ -154,14 +155,13 @@ class Population:
     def haltEvolution(self):
         self.__evolve = False
 
+fs = FitnessServer()
 
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
-run(host=fitnessServer.geneticServerIP,
-    port=fitnessServer.geneticServerPort, quiet=True)
+run(host=FitnessServer.geneticServerIP,
+    port=FitnessServer.geneticServerPort, quiet=True)
 
-fitnessServer = FitnessServer()
-
-p = Population(fitnessFunction=lambda x: fitnessServer.getSyncFitnessList(x), populationSize=100,
+p = Population(fitnessFunction=lambda x: fs.getSyncFitnessList(x), populationSize=100,
                lowerLimit=-1, upperLimit=1, shape=(inputVectorSize, numPossibleActions), elitism=True, mutationRate=0.01, selectionPressure=0.5)
 p.startEvolution()
 # TODO

@@ -7,10 +7,6 @@ from bottle import BaseRequest, post, request, route, run
 import requests
 from deap import algorithms, base, creator, tools
 
-geneticServerPort = 50122
-geneticServerUrl = "http://localhost:50122"
-geneticServerIP = "0.0.0.0"
-
 trainingServerUrl = "http://localhost:50124"
 
 
@@ -21,6 +17,12 @@ def hashBlake2(val, hSize=32):
 
 
 class FitnessServer(object):
+    geneticServerPort = 50122
+    geneticServerUrl = "http://localhost:50122"
+    geneticServerIP = "0.0.0.0"
+
+    genomeRunCount = 20
+
     def __init__(self):
         self.genomeFitnessDictionary = {}
 
@@ -45,22 +47,21 @@ class FitnessServer(object):
         genomeId = str(hashBlake2(genome.tostring(), 10))
         self.launchCallbackServer("/genomeperformance/" + genomeId)
 
-        genomeRunCount = 20
-
         postData = {"genomeId": genomeId,
-                    "callbackUrl": geneticServerUrl + "/genomeperformance/" + genomeId,
-                    "runCount": genomeRunCount,
+                    "callbackUrl": FitnessServer.geneticServerUrl + "/genomeperformance/" + genomeId,
+                    "runCount": FitnessServer.genomeRunCount,
                     "genome": genome.tolist()}
 
         requests.post(trainingServerUrl + "/startwithgenome", json=postData)
         return genomeId
 
     def getSyncFitnessList(self, genomeList):
+        print("gesSyncFitnessList: genomeList: ")
         genomeIds = []
         genomeFitness = []
         self.resultsArrived = 0
         for genome in genomeList:
-            genomeId.append(self.evaluateGenome(genome))
+            genomeIds.append(self.evaluateGenome(genome, self.syncCallback))
         while self.resultArrived <= len(genomeList):
             pass
         for genomeId in genomeIds:
@@ -69,10 +70,13 @@ class FitnessServer(object):
 
     def getSyncFitness(self, genome):
         self.resultsArrived = 0
-        genomeId = self.evaluateGenome(genome)
+        genomeId = self.evaluateGenome(genome, self.syncCallback)
         while self.resultArrived <= len(genomeList):
             pass
         return self.genomeFitnessDictionary[genomeId]
+
+    def syncCallback(self):
+        pass
 
 
 def resultReady(genomeId, medianFitness):
@@ -82,4 +86,4 @@ def resultReady(genomeId, medianFitness):
 # fitServ = fitnessServer() # TODO
 # fitServ.evaluateGenome(numpy.random.rand(12, 31), resultReady) # TODO
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
-run(host=geneticServerIP, port=geneticServerPort, quiet=True)
+run(host=FitnessServer.geneticServerIP, port=FitnessServer.geneticServerPort, quiet=True)
