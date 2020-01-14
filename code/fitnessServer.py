@@ -26,8 +26,8 @@ class FitnessServer(object):
 
     def __init__(self):
         self.genomeFitnessDictionary = {}
-        BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
-        run(host=FitnessServer.geneticServerIP, port=FitnessServer.geneticServerPort, quiet=True)
+        #BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
+        #run(host=FitnessServer.geneticServerIP, port=FitnessServer.geneticServerPort, quiet=True)
 
     def launchCallbackServer(self, path):
         route(path, "POST", self.computeFitness)
