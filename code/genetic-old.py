@@ -78,7 +78,7 @@ class Population:
     def __mate(parentList):
         babies = []
         for father, mother in parentList:
-            baby = np.empty(father.genes.shape)
+            baby = np.empty(father.genes.shaprintpe)
             for i in range(baby.shape[0]):
                 choice = np.random.choice([False, True])
                 baby[i] = father.genes[i] if choice else mother.genes[i]
@@ -116,7 +116,6 @@ class Population:
 
     def nextGeneration(self):
         self.generation += 1
-        print(self.generation)  # TODO delete
         finalPopulationSize = len(self.activePopulation)
         numSurvivors = math.ceil(
             (1 - self.selectionPressure) * len(self.activePopulation))
@@ -147,7 +146,6 @@ class Population:
             self.nextGeneration()
 
     def startEvolution(self):
-        print("hi")
         self.__evolve = True
         thread = threading.Thread(target=self.__startEvolution)
         thread.start()
