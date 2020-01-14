@@ -3,6 +3,9 @@ import numpy as np
 import preprocessor as pre
 from gameWrapper import GameWrapper as gw
 
+# add some noise to decision to prevent endless loops; set negative to disable
+noise = 0.05
+
 possibleActions = [
     lambda city, pathogen, roundsQuar, roundsAir, toCity, roundsCon: gw.doEndRound(),
     lambda city, pathogen, roundsQuar, roundsAir, toCity, roundsCon: gw.doPutUnderQuarantine(
@@ -76,7 +79,8 @@ def action(game: gw, weightMat, doManualOptimizations, safetyAdjustments=True):
     weightedActions = []
     for city, pathogen, inputStateVec in pre.vectorizeState(game):
         actionWeightVec = np.dot(weightMat, inputStateVec)
-        numberRoundsVec = [1,1,1] # Not implemented for simplicity, originally: np.dot(roundsMat, inputStateVec)
+        # Not implemented for simplicity, originally: np.dot(roundsMat, inputStateVec)
+        numberRoundsVec = [1, 1, 1]
 
         roundsQuarantine = int(round(numberRoundsVec[0]))
         roundsCloseAirport = int(round(numberRoundsVec[1]))
@@ -129,7 +133,7 @@ def action(game: gw, weightMat, doManualOptimizations, safetyAdjustments=True):
 
         for (action, cost) in sortedActions:
             if cost <= budget:
-                if np.random.rand() > 0.2:  # add some noise to decision to prevent endless loops # FIXME why?
+                if np.random.rand() > noise:
                     return action
 
     return gw.doEndRound()
