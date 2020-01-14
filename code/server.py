@@ -67,7 +67,7 @@ class trainingServer(object):
             path = "/" + self.genomeId + str(i)
             route(path, "POST", ps.gamePlayer)
             subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path,
-                              "-o", "logs/log_", self.genomeId, str(i), ".txt"])
+                              "-o", "logs/log_" + self.genomeId, str(i) + ".txt"])
             print(self.genomeId, " playing at: ", path)
 
         return {"id": self.genomeId, "state": "started"}
