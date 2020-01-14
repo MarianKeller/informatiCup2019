@@ -1,5 +1,10 @@
 # This file contains code from the DEAP examples written by De Rainville et al.
 import random
+import numpy
+
+import fitnessServer
+
+from bottle import BaseRequest, post, request, route, run
 
 from deap import base
 from deap import creator
@@ -7,7 +12,7 @@ from deap import tools
 
 
 creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-creator.create("Individual", list, fitness=creator.FitnessMax)
+creator.create("Individual", numpy.ndarray, fitness=creator.FitnessMax)
 
 toolbox = base.Toolbox()
 
@@ -15,13 +20,13 @@ toolbox = base.Toolbox()
 #                      define 'attr_bool' to be an attribute ('gene')
 #                      which corresponds to floats sampled uniformly
 #                      from the range [0,1] 
-toolbox.register("attr_bool", random.rand, 0, 1)
+toolbox.register("attr_float", random.rand, 0, 1)
+#numpy.random.rand(12, 31),
 
 # Structure initializers
 #                         define 'individual' to be an individual
-#                         consisting of 100 'attr_bool' elements ('genes')
-toolbox.register("individual", tools.initRepeat, creator.Individual,
-                 toolbox.attr_bool, 100)
+#                         consisting of random n x m array
+toolbox.register("individual", numpy.random.rand, 12, 31) # TODO: change matrix dimensions to correct ones
 
 
 # define the population to be a list of individuals
@@ -29,8 +34,9 @@ toolbox.register("population", tools.initRepeat, list, toolbox.individual)
 
 
 # the goal ('fitness') function to be maximized
-def evalOneMax(individual):
-    return sum(individual),
+def evalOneMax(population):
+    fs = fitnessServer()
+    return fs.getSyncFitnessList(population)
 
 
 # ----------
@@ -58,19 +64,17 @@ toolbox.register("select", tools.selTournament, tournsize=3)
 
 # ----------
 def main():
-
+    BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
+    run(host=fitnessServer.geneticServerIP, port=fitnessServer.geneticServerPort, quiet=True)
     #random.seed()
 
-    # create an initial population of 300 individuals (where
-    # each individual is a list of integers)
-    pop = toolbox.population(n=300)
+    # create an initial population of 100 individuals (where
+    # each individual is a list of nparrays)
+    pop = toolbox.population(n=100)
 
     # CXPB  is the probability with which two individuals
-
     #       are crossed
-
     #
-
     # MUTPB is the probability for mutating an individual
 
     CXPB, MUTPB = 0.5, 0.2
@@ -78,11 +82,10 @@ def main():
     print("Start of evolution")
 
     # Evaluate the entire population
-
-    fitnesses = list(map(toolbox.evaluate, pop))
+    fitnesses = evalOneMax(pop)
+    #fitnesses = list(map(toolbox.evaluate, pop))
 
     for ind, fit in zip(pop, fitnesses):
-
         ind.fitness.values = fit
 
     print("  Evaluated %i individuals" % len(pop))
@@ -167,5 +170,4 @@ def main():
     print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
 
 
-if __name__ == "__main__":
-    main()
+main()
