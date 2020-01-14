@@ -20,8 +20,7 @@ def hashBlake2(val, hSize=32):
     return h.hexdigest()
 
 
-class fitnessServer(object):
-
+class FitnessServer(object):
     def __init__(self):
         self.genomeFitnessDictionary = {}
 
