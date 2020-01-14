@@ -160,4 +160,4 @@ p = Population(fitnessFunction=lambda x: fs.getAsyncFitnessList(x), populationSi
 for i in range(2):
     p.evolve()
 
-print(p.lastGeneration[0].fitess)
+print(p.lastGeneration[0].fitness)
