@@ -119,14 +119,11 @@ class GameWrapper:
     def getPathogenPrevalenceCity(self, pathogen, city):
         return self.pathogenPrevalences[pathogen, city]
 
-    # TODO sinceRound => age could be interesting and untilRound
     def isVaccineInDevelopment(self, pathogen):
         for event in self.globalEvents:
             if event["type"] == "vaccineInDevelopment":
                 return True
         return False
-
-    # TODO sinceRound => age could be interesting
 
     def isVaccineAvailable(self, pathogen):
         for event in self.globalEvents:
@@ -134,15 +131,11 @@ class GameWrapper:
                 return True
         return False
 
-    # TODO sinceRound => agenceRound could be interesting and untilRound
-
     def isMedicationInDevelopment(self, pathogen):
         for event in self.globalEvents:
             if event["type"] == "medicationInDevelopment":
                 return True
         return False
-
-    # TODO sinceRound => age could be interesting
 
     def isMedicationAvailable(self, pathogen):
         for event in self.globalEvents:
@@ -150,15 +143,11 @@ class GameWrapper:
                 return True
         return False
 
-    # TODO sinceRound => age could be interesting
-
     def isLargeScalePanic(self):
         for event in self.globalEvents:
             if event["type"] == "largeScalePanic":
                 return True
         return False
-
-    # TODO sinceRound => age could be interesting
 
     def isEconomicCrisis(self):
         for event in self.globalEvents:
