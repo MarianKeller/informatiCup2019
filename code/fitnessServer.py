@@ -5,7 +5,6 @@ import numpy
 from bottle import BaseRequest, post, request, route, run
 
 import requests
-from deap import algorithms, base, creator, tools
 
 trainingServerUrl = "http://localhost:50124"
 
@@ -35,7 +34,7 @@ class FitnessServer(object):
         fitnessVect = []
         for [genomeNr, result, rounds] in params["gameResults"]:
             intResult = int(result == "win")
-            fitnessVect.append(0.5 + ((-1) ** (intResult+1))*(1/numpy.log(1+rounds))*0.5)
+            fitnessVect.append(0.5 + ((-1) ** (intResult+1))*(1/(1+numpy.log(rounds)))*0.5)
         self.genomeFitnessDictionary[genomeId] = numpy.median(fitnessVect)
         self.callbackFunction(genomeId, self.genomeFitnessDictionary[genomeId])
         self.resultsArrived = self.resultsArrived + 1
@@ -61,6 +60,7 @@ class FitnessServer(object):
         genomeFitness = []
         self.resultsArrived = 0
         for genome in genomeList:
+            #print(genome.shape) #TODO:remove
             genomeIds.append(self.evaluateGenome(genome, self.syncCallback))
         while self.resultArrived <= len(genomeList):
             pass
