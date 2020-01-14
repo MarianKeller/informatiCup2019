@@ -4,7 +4,7 @@ import preprocessor as pre
 from gameWrapper import GameWrapper as gw
 
 # add some noise to decision to prevent endless loops; set negative to disable
-noise = 0.05
+noise = 0.15
 
 possibleActions = [
     lambda city, pathogen, roundsQuar, roundsAir, toCity, roundsCon: gw.doEndRound(),
