@@ -154,7 +154,6 @@ def getMaxConnectedVictims(game: GameWrapper, city, pathogen):
     worstConnection = None
     maxVictims = 0
 
-    # TODO if connection is closed, will city appear as valid choice?
     connections = game.getConnections(city)
     for connection in connections:
         pathogens = game.getPathogensCity(connection)
@@ -166,7 +165,86 @@ def getMaxConnectedVictims(game: GameWrapper, city, pathogen):
     return worstConnection, maxVictims
 
 
-inputVectorSize = 41  # update when necessary
+# update when necessary; also don't forget to normalize any added values to interval [0; 1]
+inputVectorSize = 42
+
+
+def getStateVec(game, city, pathogen, isInfected, pointsNormalized, worldPopulationNormalized, pathogenPrevalencesGlobal):
+    latitude = game.getLatitude(city)
+    return np.array([
+        int(isInfected),
+
+        # independent of city
+        pointsNormalized,
+
+        # dependent on city, non-indicator
+        normalize(game.getPopulation(city),
+                  minCityPopulation, maxCityPopulation),
+        normalize(game.getEconomy(city), minAttribute, maxAttribute),
+        normalize(game.getGovernment(city),
+                  minAttribute, maxAttribute),
+        normalize(game.getHygiene(city), minAttribute, maxAttribute),
+        normalize(game.getAwareness(city), minAttribute, maxAttribute),
+        int(game.isOutbreak(city)),
+        int(game.isElectionsCalled(city)),
+        int(game.isAntiVaccinationism(city)),
+        int(game.isQuarantine(city)),
+        int(game.isInfluenceExerted(city)),
+        int(game.isCampaignLaunched(city)),
+        int(game.isAirportClosed(city)),
+        int(game.isHygienicMeasuresApplied(city)),
+        int(game.isBioTerrorism(city)),
+        int(game.isUprising(city)),
+
+        # dependent on pathogen, non-indicator
+        normalize(game.getPathogenInfectivity(
+            pathogen), minAttribute, maxAttribute) if isInfected else 0,
+        normalize(game.getPathogenMobility(pathogen),
+                  minAttribute, maxAttribute) if isInfected else 0,
+        normalize(game.getPathogenDuration(pathogen),
+                  minAttribute, maxAttribute) if isInfected else 0,
+        normalize(game.getPathogenLethality(
+            pathogen), minAttribute, maxAttribute) if isInfected else 0,
+        normalize(game.getPathogenAge(pathogen),
+                  minAttribute, maxAttribute) if isInfected else 0,
+
+        # dependent on pathogen and city, non-indicator
+        game.getPathogenPrevalenceCity(pathogen, city) if isInfected else 0,
+
+        # independent of pathogen and city, indicator
+        worldPopulationNormalized,
+
+        # dependent on city, indicator
+        climateZoneIsTropical(latitude),
+        climateZoneIsSubTropical(latitude),
+        climateZoneIsModerate(latitude),
+        climateZoneIsArctic(latitude),
+        normalize(getConnectivity(game, city), 0, maxWorldPopulation),
+        normalize(getHighestPathogenInfectivity(
+            game, city)[1], minAttribute, maxAttribute),
+        normalize(getHighestPathogenMobility(game, city)
+                  [1], minAttribute, maxAttribute),
+        normalize(getHighestPathogenLethality(game, city)
+                  [1], minAttribute, maxAttribute),
+        normalize(getHighestPathogenPrevalence(game, city)
+                  [1], minAttribute, maxAttribute),
+
+        # dependent on pathogen, indicator
+        pathogenPrevalencesGlobal[pathogen] if isInfected else 0,
+        int(game.isVaccineInDevelopment(pathogen)) if isInfected else 0,
+        int(game.isVaccineAvailable(pathogen)) if isInfected else 0,
+        int(game.isMedicationInDevelopment(pathogen)) if isInfected else 0,
+        int(game.isMedicationAvailable(pathogen)) if isInfected else 0,
+        int(game.isLargeScalePanic()) if isInfected else 0,
+        int(game.isEconomicCrisis()) if isInfected else 0,
+
+        # dependent on pathogen and city, indicator
+        normalize(getMaxConnectedVictims(game, city, pathogen)[
+            1], 0, maxWorldPopulation) if isInfected else 0,
+
+        # bias
+        1
+    ])
 
 
 def vectorizeState(game: GameWrapper):
@@ -180,83 +258,13 @@ def vectorizeState(game: GameWrapper):
     worldPopulationNormalized = normalize(
         worldPopulation, minWorldPopulation, maxWorldPopulation)
 
-    # TODO what happens to cities that have not yet been infected?
     for city in cities:
         for pathogen in game.getPathogensCity(city):
-            latitude = game.getLatitude(city)
-            stateVec = np.array([
-                # independent of city
-                pointsNormalized,
-
-                # dependent on city, non-indicator
-                normalize(game.getPopulation(city),
-                          minCityPopulation, maxCityPopulation),
-                normalize(game.getEconomy(city), minAttribute, maxAttribute),
-                normalize(game.getGovernment(city),
-                          minAttribute, maxAttribute),
-                normalize(game.getHygiene(city), minAttribute, maxAttribute),
-                normalize(game.getAwareness(city), minAttribute, maxAttribute),
-                int(game.isOutbreak(city)),
-                int(game.isElectionsCalled(city)),
-                int(game.isAntiVaccinationism(city)),
-                int(game.isQuarantine(city)),
-                int(game.isInfluenceExerted(city)),
-                int(game.isCampaignLaunched(city)),
-                int(game.isAirportClosed(city)),
-                int(game.isHygienicMeasuresApplied(city)),
-                int(game.isBioTerrorism(city)),
-                int(game.isUprising(city)),
-
-                # dependent on pathogen, non-indicator
-                normalize(game.getPathogenInfectivity(
-                    pathogen), minAttribute, maxAttribute),
-                normalize(game.getPathogenMobility(pathogen),
-                          minAttribute, maxAttribute),
-                normalize(game.getPathogenDuration(pathogen),
-                          minAttribute, maxAttribute),
-                normalize(game.getPathogenLethality(
-                    pathogen), minAttribute, maxAttribute),
-                normalize(game.getPathogenAge(pathogen),
-                          minAttribute, maxAttribute),
-
-                # dependent on pathogen and city, non-indicator
-                game.getPathogenPrevalenceCity(pathogen, city),
-
-                # independent of pathogen and city, indicator
-                worldPopulationNormalized,
-
-                # dependent on city, indicator
-                climateZoneIsTropical(latitude),
-                climateZoneIsSubTropical(latitude),
-                climateZoneIsModerate(latitude),
-                climateZoneIsArctic(latitude),
-                normalize(getConnectivity(game, city), 0, maxWorldPopulation),
-                normalize(getHighestPathogenInfectivity(
-                    game, city)[1], minAttribute, maxAttribute),
-                normalize(getHighestPathogenMobility(game, city)
-                          [1], minAttribute, maxAttribute),
-                normalize(getHighestPathogenLethality(game, city)
-                          [1], minAttribute, maxAttribute),
-                normalize(getHighestPathogenPrevalence(game, city)
-                          [1], minAttribute, maxAttribute),
-
-                # dependent on pathogen, indicator
-                pathogenPrevalencesGlobal[pathogen],
-                int(game.isVaccineInDevelopment(pathogen)),
-                int(game.isVaccineAvailable(pathogen)),
-                int(game.isMedicationInDevelopment(pathogen)),
-                int(game.isMedicationAvailable(pathogen)),
-                int(game.isLargeScalePanic()),
-                int(game.isEconomicCrisis()),
-
-                # dependent on pathogen and city, indicator
-                normalize(getMaxConnectedVictims(game, city, pathogen)[
-                          1], 0, maxWorldPopulation),
-                # TODO missing indicator values
-                # don't forget to normalize the added values
-
-                # bias
-                1
-            ])
-
+            isInfected = True
+            stateVec = getStateVec(game, city, pathogen, isInfected, pointsNormalized, worldPopulationNormalized, pathogenPrevalencesGlobal)
+            yield city, pathogen, stateVec
+        if game.getPathogensCity(city) == []:
+            isInfected = False
+            pathogen = None
+            stateVec = getStateVec(game, city, pathogen, isInfected, pointsNormalized, worldPopulationNormalized, pathogenPrevalencesGlobal)
             yield city, pathogen, stateVec

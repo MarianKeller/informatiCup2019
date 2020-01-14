@@ -78,6 +78,7 @@ def action(game: gw, weightMat, doManualOptimizations, safetyAdjustments=True):
 
     weightedActions = []
     for city, pathogen, inputStateVec in pre.vectorizeState(game):
+        print(pathogen)
         actionWeightVec = np.dot(weightMat, inputStateVec)
         # Not implemented for simplicity, originally: np.dot(roundsMat, inputStateVec)
         numberRoundsVec = [1, 1, 1]
@@ -101,6 +102,12 @@ def action(game: gw, weightMat, doManualOptimizations, safetyAdjustments=True):
             if game.isMedicationInDevelopment(pathogen) or game.isMedicationAvailable(pathogen):
                 actionWeightVec[developMedicationPos] = float("-inf")
             else:
+                actionWeightVec[deployMedicationPos] = float("-inf")
+
+            if pathogen is None:
+                actionWeightVec[developVaccinePos] = float("-inf")
+                actionWeightVec[deployVaccinePos] = float("-inf")
+                actionWeightVec[developMedicationPos] = float("-inf")
                 actionWeightVec[deployMedicationPos] = float("-inf")
 
         if doManualOptimizations:
