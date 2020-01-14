@@ -121,7 +121,7 @@ class Population:
         self.lastGeneration = copy.deepcopy(self.activePopulation)
 
     def __evaluateGeneration(self, callback):
-        self.fitnessFunction(self.activePopulation, callback=callback)
+        self.fitnessFunction(self.activePopulation, callback)
 
     def __applyGeneticOperators(self):
         finalPopulationSize = len(self.activePopulation)
@@ -154,7 +154,7 @@ BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 run(host=FitnessServer.geneticServerIP,
     port=FitnessServer.geneticServerPort, quiet=True)
 
-p = Population(fitnessFunction=lambda x: fs.getAsyncFitnessList(x), populationSize=100,
+p = Population(fitnessFunction=lambda pop, callb: fs.getAsyncFitnessList(pop, callb), populationSize=100,
                lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
 for i in range(2):
