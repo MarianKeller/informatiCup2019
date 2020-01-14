@@ -181,7 +181,7 @@ def vectorizeState(game: GameWrapper):
     worldPopulationNormalized = normalize(
         worldPopulation, minWorldPopulation, maxWorldPopulation)
 
-    # TODO what happens to cities that have not yet been infected
+    # TODO what happens to cities that have not yet been infected?
     for city in cities:
         for pathogen in game.getPathogensCity(city):
             latitude = game.getLatitude(city)
@@ -243,9 +243,7 @@ def vectorizeState(game: GameWrapper):
                 # dependent on pathogen and city, indicator
                 normalize(getMaxConnectedVictims(game, city, pathogen)[
                           1], 0, maxWorldPopulation),
-
                 # TODO missing indicator values
-                # TODO add indicator for maximum number of reachable victims (to close airport)
                 # don't forget to normalize the added values
 
                 # bias

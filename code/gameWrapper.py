@@ -144,7 +144,7 @@ class GameWrapper:
         return False
 
 
-    # TODO sisinceRound => agenceRound could be interesting and untilRound
+    # TODO sinceRound => agenceRound could be interesting and untilRound
     def isMedicationInDevelopment(self, pathogen):
         # TODO
         return False

@@ -37,6 +37,7 @@ class FitnessServer(object):
             fitnessVect.append([0.5 + ((-1) ^ (intResult+1))*(1/rounds)*0.5])
         self.genomeFitnessDictionary[genomeId] = numpy.median(fitnessVect)
         self.callbackFunction(genomeId, self.genomeFitnessDictionary[genomeId])
+        self.
         print(fitnessVect, " median: ", self.genomeFitnessDictionary[genomeId])
         return "ACK"
 
@@ -55,9 +56,15 @@ class FitnessServer(object):
         requests.post(trainingServerUrl + "/startwithgenome", json=postData)
         return genomeId
 
-    def newTrainingCampaign(self):
-        # TODO
-        pass
+    def getSyncFitness(self, genomeList)
+        genomeIds = []
+        self.resultsArrived = 0
+        for genome in genomeList
+            genomeId.append(self.evaluateGenome(genome))
+        while self.resultArrived <= len(genomeList)
+            print(self.genomeFitnessDictionary)
+            
+        return genomeIds
 
 
 def resultReady(genomeId, medianFitness):
