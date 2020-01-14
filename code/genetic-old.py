@@ -149,12 +149,11 @@ class Population:
 
 
 fs = FitnessServer()
-
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 run(host=FitnessServer.geneticServerIP,
     port=FitnessServer.geneticServerPort, quiet=True)
 
-p = Population(fitnessFunction=lambda pop, callb: fs.getAsyncFitnessList(pop, callb), populationSize=100,
+p = Population(fitnessFunction=lambda pop, callb: fs.getAsyncFitnessList(pop, callb), populationSize=2,
                lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
 for i in range(2):
