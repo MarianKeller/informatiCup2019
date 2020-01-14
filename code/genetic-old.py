@@ -162,7 +162,7 @@ run(host=FitnessServer.geneticServerIP,
     port=FitnessServer.geneticServerPort, quiet=True)
 
 p = Population(fitnessFunction=lambda x: fs.getSyncFitnessList(x), populationSize=100,
-               lowerLimit=-1, upperLimit=1, shape=(inputVectorSize, numPossibleActions), elitism=True, mutationRate=0.01, selectionPressure=0.5)
+               lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), elitism=True, mutationRate=0.01, selectionPressure=0.5)
 p.startEvolution()
 # TODO
 # while(len(p.graveyard) < 1000):
