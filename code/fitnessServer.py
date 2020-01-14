@@ -34,7 +34,7 @@ class fitnessServer(object):
         fitnessVect = []
         for [genomeNr, result, rounds] in params["gameResults"]:
             intResult = int(result == "win")
-            fitnessVect.append([0.5 + ((-1) ** (intResult+1))*(1/rounds)*0.5])
+            fitnessVect.append(0.5 + ((-1) ** (intResult+1))*(1/numpy.log(1+rounds))*0.5)
         self.genomeFitnessDictionary[genomeId] = numpy.median(fitnessVect)
         self.callbackFunction(genomeId, self.genomeFitnessDictionary[genomeId])
         self.resultsArrived = self.resultsArrived + 1
