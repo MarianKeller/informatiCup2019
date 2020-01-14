@@ -62,7 +62,7 @@ class FitnessServer(object):
 
 
     def getAsyncFitnessList(self, individualsList, fitnessListComplete):
-        self.fitnessListComplete
+        self.fitnessListComplete = fitnessListComplete
         self.asyncGenomeIds = []
         self.individualsList = individualsList
         for specimen in self.individualsList:
