@@ -10,8 +10,8 @@ import numpy as np
 import fitnessServer
 from bottle import BaseRequest, post, request, route, run
 
-from code.preprocessor import inputVectorSize
-from code.postprocessor import numPossibleActions 
+from preprocessor import inputVectorSize
+from postprocessor import numPossibleActions 
 
 
 class Population:
@@ -98,7 +98,7 @@ class Population:
         return mutatedGeneration
 
     def __init__(self, fitnessFunction: Callable, populationSize, lowerLimit, upperLimit, shape,
-                 selectionPressure=0.5, mutationRate=0.01, elitism=True, curGeneration=None, graveyard: List = []):
+                 selectionPressure=0.5, mutationRate=0.01, elitism=True, activePopulation=None, graveyard: List = []):
         # note: selection mechanism requires fitness >= 0
         self.fitnessFunction = fitnessFunction
         self.populationSize = populationSize
@@ -115,6 +115,7 @@ class Population:
         self.__evolve = True
 
     def nextGeneration(self):
+        self.generation += 1
         print(self.generation) # TODO delete
         finalPopulationSize = len(self.activePopulation)
         numSurvivors = math.ceil(
@@ -139,13 +140,14 @@ class Population:
         self.activePopulation = newGeneration
 
     def __startEvolution(self):
-        if self.activePopulation == None:
+        if self.activePopulation is None:
             self.activePopulation = Population.__createPopulation(
                 self.populationSize, self.lowerLimit, self.upperLimit, self.shape)
         while(self.__evolve):
             self.nextGeneration()
 
     def startEvolution(self):
+        print("hi")
         self.__evolve = True
         thread = threading.Thread(target=self.__startEvolution)
         thread.start()
