@@ -103,8 +103,6 @@ def action(game: gw, weightMat, doManualOptimizations, safetyAdjustments=True):
             else:
                 actionWeightVec[deployMedicationPos] = float("-inf")
 
-        # TODO if people of city already vaccinated, then don't vaccinate them again
-
         if doManualOptimizations:
             if game.getEconomy(city) == 5:
                 actionWeightVec[exertInfluencePos] = float("-inf")

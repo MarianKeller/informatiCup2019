@@ -11,9 +11,8 @@ maxCityPopulation = 37555
 maxWorldPopulation = 756371
 minWorldPopulation = math.ceil(maxWorldPopulation/2)
 
-# TODO
 minRounds = 1
-maxRounds = 100
+maxRounds = 1000
 
 # start with 40 points in round 1, get 20 each following round, can't spend last round
 minPoints = 0
