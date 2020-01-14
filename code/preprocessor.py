@@ -167,7 +167,7 @@ def getMaxConnectedVictims(game: GameWrapper, city, pathogen):
     return worstConnection, maxVictims
 
 
-inputVectorSize = 31  # update when necessary
+inputVectorSize = 41  # update when necessary
 
 
 def vectorizeState(game: GameWrapper):
@@ -197,6 +197,16 @@ def vectorizeState(game: GameWrapper):
                           minAttribute, maxAttribute),
                 normalize(game.getHygiene(city), minAttribute, maxAttribute),
                 normalize(game.getAwareness(city), minAttribute, maxAttribute),
+                int(game.isOutbreak(city)),
+                int(game.isElectionsCalled(city)),
+                int(game.isAntiVaccinationism(city)),
+                int(game.isQuarantine(city)),
+                int(game.isInfluenceExerted(city)),
+                int(game.isCampaignLaunched(city)),
+                int(game.isAirportClosed(city)),
+                int(game.isHygienicMeasuresApplied(city)),
+                int(game.isBioTerrorism(city)),
+                int(game.isUprising(city)),
 
                 # dependent on pathogen, non-indicator
                 normalize(game.getPathogenInfectivity(
