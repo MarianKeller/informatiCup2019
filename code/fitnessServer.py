@@ -20,7 +20,7 @@ def hashBlake2(val, hSize=32):
     return h.hexdigest()
 
 
-class FitnessServer(object):
+class fitnessServer(object):
 
     def __init__(self):
         self.genomeFitnessDictionary = {}
@@ -34,10 +34,10 @@ class FitnessServer(object):
         fitnessVect = []
         for [genomeNr, result, rounds] in params["gameResults"]:
             intResult = int(result == "win")
-            fitnessVect.append([0.5 + ((-1) ^ (intResult+1))*(1/rounds)*0.5])
+            fitnessVect.append([0.5 + ((-1) ** (intResult+1))*(1/rounds)*0.5])
         self.genomeFitnessDictionary[genomeId] = numpy.median(fitnessVect)
         self.callbackFunction(genomeId, self.genomeFitnessDictionary[genomeId])
-        self.
+        self.resultsArrived = self.resultsArrived + 1
         print(fitnessVect, " median: ", self.genomeFitnessDictionary[genomeId])
         return "ACK"
 
@@ -56,12 +56,12 @@ class FitnessServer(object):
         requests.post(trainingServerUrl + "/startwithgenome", json=postData)
         return genomeId
 
-    def getSyncFitness(self, genomeList)
+    def getSyncFitness(self, genomeList):
         genomeIds = []
         self.resultsArrived = 0
-        for genome in genomeList
+        for genome in genomeList:
             genomeId.append(self.evaluateGenome(genome))
-        while self.resultArrived <= len(genomeList)
+        while self.resultArrived <= len(genomeList):
             print(self.genomeFitnessDictionary)
             
         return genomeIds

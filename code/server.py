@@ -8,6 +8,8 @@ from gameWrapper import GameWrapper
 import preprocessor as pre
 import os
 
+trainingMode = True
+
 if os.name == 'posix':
     gameFilePath = "ic20/ic20_linux"
 elif os.name == 'nt':
@@ -105,6 +107,7 @@ def launchGameServer():
     BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
     run(host=gameServerIP, port=gameServerPort, quiet=True)
 
-
-# launchTrainingServer()
-launchGameServer()
+if trainingMode:
+    launchTrainingServer()
+else:
+    launchGameServer()
