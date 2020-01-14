@@ -46,7 +46,7 @@ class fitnessServer(object):
         genomeId = str(hashBlake2(genome.tostring(), 10))
         self.launchCallbackServer("/genomeperformance/" + genomeId)
 
-        genomeRunCount = 2
+        genomeRunCount = 20
 
         postData = {"genomeId": genomeId,
                     "callbackUrl": geneticServerUrl + "/genomeperformance/" + genomeId,
@@ -56,15 +56,24 @@ class fitnessServer(object):
         requests.post(trainingServerUrl + "/startwithgenome", json=postData)
         return genomeId
 
-    def getSyncFitness(self, genomeList):
+    def getSyncFitnessList(self, genomeList):
         genomeIds = []
+        genomeFitness = []
         self.resultsArrived = 0
         for genome in genomeList:
             genomeId.append(self.evaluateGenome(genome))
         while self.resultArrived <= len(genomeList):
-            print(self.genomeFitnessDictionary)
-            
-        return genomeIds
+            pass
+        for genomeId in genomeIds:
+            genomeFitness.append(genomeFitnessDictionary[genomeId])
+        return genomeFitness
+
+    def getSyncFitness(self, genome):
+        self.resultsArrived = 0
+        genomeId = self.evaluateGenome(genome)
+        while self.resultArrived <= len(genomeList):
+            pass
+        return self.genomeFitnessDictionary[genomeId]
 
 
 def resultReady(genomeId, medianFitness):
