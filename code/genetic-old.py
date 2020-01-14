@@ -49,6 +49,8 @@ class Population:
 
     @staticmethod
     def __cumulativeFitness(population):
+        for individual in population:
+            print(individual.genome, "  ", individual.fitness)
         return sum(individual.fitness for individual in population)
 
     @staticmethod
@@ -147,16 +149,18 @@ class Population:
             self.__applyGeneticOperators()
         self.__evaluateGeneration(callback=self.__cleanup)
 
+@post("/main")
+def main():
+    fs = FitnessServer()
 
-fs = FitnessServer()
+    p = Population(fitnessFunction=lambda pop, callb: fs.getAsyncFitnessList(pop, callb), populationSize=2,
+                lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), elitism=True, mutationRate=0.01, selectionPressure=0.5)
+
+    for i in range(2):
+        p.evolve()
+
+    print(p.lastGeneration[0].fitness)
+    return "main"
+
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
-run(host=FitnessServer.geneticServerIP,
-    port=FitnessServer.geneticServerPort, quiet=True)
-
-p = Population(fitnessFunction=lambda pop, callb: fs.getAsyncFitnessList(pop, callb), populationSize=2,
-               lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), elitism=True, mutationRate=0.01, selectionPressure=0.5)
-
-for i in range(2):
-    p.evolve()
-
-print(p.lastGeneration[0].fitness)
+run(host=FitnessServer.geneticServerIP, port=FitnessServer.geneticServerPort, quiet=True)
