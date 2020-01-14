@@ -80,7 +80,7 @@ def resultReady(genomeId, medianFitness):
     print("result: ", medianFitness)
 
 
-fitServ = fitnessServer()
-fitServ.evaluateGenome(numpy.random.rand(12, 31), resultReady)
+# fitServ = fitnessServer() # TODO
+# fitServ.evaluateGenome(numpy.random.rand(12, 31), resultReady) # TODO
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 run(host=geneticServerIP, port=geneticServerPort, quiet=True)

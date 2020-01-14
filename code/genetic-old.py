@@ -1,11 +1,17 @@
+import math
 import threading
 import time
 from collections import namedtuple
 from copy import deepcopy
 from typing import Callable, Dict, List, Tuple
-import math
 
 import numpy as np
+
+import fitnessServer
+from bottle import BaseRequest, post, request, route, run
+
+from code.preprocessor import inputVectorSize
+from code.postprocessor import numPossibleActions 
 
 
 class Population:
@@ -22,7 +28,8 @@ class Population:
         # TODO make class; directly call fitness function that rates whole generation at once by updating the RatedIndividual class if fitness == None
         RatedIndividual = namedtuple(
             'RatedIndividual', ['fitness', 'genes'])
-        return [RatedIndividual(fitnessFunction(individual), individual) for individual in generation]
+        fitnesses = fitnessFunction(generation)
+        return RatedIndividual(zip(fitnesses, generation))
 
     @staticmethod
     def __unrate(ratedGeneration):
@@ -102,7 +109,8 @@ class Population:
         self.mutationRate = mutationRate
         self.elitism = elitism
         self.curGeneration = curGeneration
-        self.graveyard = graveyard  # TODO stream graveyard to a file and make lastGeneration field
+        # TODO stream graveyard to a file and make lastGeneration field
+        self.graveyard = graveyard
         self.__evolve = True
 
     def nextGeneration(self):
@@ -144,8 +152,12 @@ class Population:
         self.__evolve = False
 
 
-p = Population(fitnessFunction=lambda x: sum(map(sum, x))/900000, populationSize=200,
-               lowerLimit=0, upperLimit=1000, shape=(30, 30), elitism=True, mutationRate=0.05, selectionPressure=0.5)
+BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
+run(host=fitnessServer.geneticServerIP,
+    port=fitnessServer.geneticServerPort, quiet=True)
+
+p = Population(fitnessFunction=lambda x: fitnessServer().getSyncFitnessList(x), populationSize=200,
+               lowerLimit=-1, upperLimit=1, shape=(inputVectorSize, numPossibleActions), elitism=True, mutationRate=0.05, selectionPressure=0.5)
 p.startEvolution()
 while(len(p.graveyard) < 1000):
     time.sleep(1)
