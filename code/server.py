@@ -69,7 +69,7 @@ class trainingServer(object):
         genome = np.array(params["genome"])
 
         self.gameResults[genomeId] = []
-        self.gameMetas[genomeId] = [0, runCount]
+        self.gameMetas[genomeId] = [0, runCount, callbackUrl]
 
         for i in range(0, runCount):
             ps = playerServer(genomeId, i, self, genome)
@@ -91,7 +91,7 @@ class trainingServer(object):
     def returnGameResults(self, genomeId):
         jsonGameResults = {"genomeId": genomeId,
                            "gameResults": self.gameResults[genomeId]}
-        requests.post(self.callbackUrl, json=jsonGameResults)
+        requests.post(self.gameMetas[genomeId][3], json=jsonGameResults)
 
 
 trainingServerPort = 50124
