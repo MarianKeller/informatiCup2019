@@ -1,12 +1,15 @@
+import collections
 import json
-from bottle import BaseRequest, post, request, run, route
+import os
+import subprocess
+
 import numpy as np
 import requests
-import subprocess
+from bottle import BaseRequest, post, request, route, run
+
 import postprocessor as actor
-from gameWrapper import GameWrapper
 import preprocessor as pre
-import os
+from gameWrapper import GameWrapper
 
 trainingMode = True
 consoleOutput = False
@@ -19,7 +22,7 @@ elif os.name == 'nt':
 
 class playerServer(object):
     def __init__(self, id="game1", count=1, trainer=None, genome=None):
-        self.hasTrainer = (trainer != None)
+        self.hasTrainer = (trainer is not None)
         self.myTrainer = trainer
         self.genomeId = id
         self.genomeCount = count
@@ -35,14 +38,15 @@ class playerServer(object):
                 game, self.genome, doManualOptimizations=(not self.hasTrainer))
             if consoleOutput:
                 print("numPossibleActions: ", actor.numPossibleActions,
-                  "inputVectorSize: ", pre.inputVectorSize)
-                print(self.genomeId, str(self.genomeCount), " action:", action, "\n")
+                      "inputVectorSize: ", pre.inputVectorSize)
+                print(self.genomeId, str(self.genomeCount),
+                      " action:", action, "\n")
             return action
         else:
             if self.hasTrainer:
                 if consoleOutput:
                     print(self.genomeId, str(self.genomeCount), " from trainer: ",
-                      game.getOutcome(), " round: ", game.getRound())
+                          game.getOutcome(), " round: ", game.getRound())
                 self.myTrainer.collectGameResult(
                     self.genomeCount, self.genomeId, game.getOutcome(), game.getRound())
             else:
@@ -54,13 +58,28 @@ class playerServer(object):
 class trainingServer(object):
     def __init__(self):
         self.gameResults = {}
-        self.gameMetas = {}
+        self.pendingRuns = {}
+        self.maxRuns = {}
+        self.callbackURL = {}
+        self.genome = {}
+
+    def startPlayerServer(self, genomeId, genome):
+        pendingRuns = self.pendingRuns[genomeId]
+        maxRuns = self.maxRuns[genomeId]
+        nthRun = maxRuns - pendingRuns + 1
+        ps = playerServer(genomeId, nthRun, self, genome)
+        path = "/" + genomeId + str(nthRun)
+        route(path, "POST", ps.gamePlayer)
+        # subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path,
+        #                   "-o", "logs/log_" + genomeId, str(i) + ".txt"])
+        subprocess.Popen(
+            [gameFilePath, "-u", trainingServerUrl + path, "-o", "/dev/null"])
+        # subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path])
+        if consoleOutput:
+            print(genomeId, " playing at: ", path)
 
     def startGameWithGenome(self):
         params = request.json
-
-        if consoleOutput:
-            print(params)
 
         # parse request
         genomeId = params["genomeId"]
@@ -68,31 +87,31 @@ class trainingServer(object):
         runCount = params["runCount"]
         genome = np.array(params["genome"])
 
-        self.gameResults[genomeId] = []
-        self.gameMetas[genomeId] = [0, runCount, callbackUrl]
+        if consoleOutput:
+            print(genomeId, callbackUrl, runCount)
 
-        for i in range(0, runCount):
-            ps = playerServer(genomeId, i, self, genome)
-            path = "/" + genomeId + str(i)
-            route(path, "POST", ps.gamePlayer)
-            # subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path,
-            #                   "-o", "logs/log_" + genomeId, str(i) + ".txt"])
-            subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path])
-            if consoleOutput:
-                print(genomeId, " playing at: ", path)
+        self.gameResults[genomeId] = []
+        self.pendingRuns[genomeId] = runCount
+        self.maxRuns[genomeId] = runCount
+        self.callbackURL[genomeId] = callbackUrl
+        self.genome[genomeId] = genome
+
+        self.startPlayerServer(genomeId, genome)
 
         return {"id": genomeId, "state": "started"}
 
     def collectGameResult(self, genomeNr, genomeId, result, rounds):
         self.gameResults[genomeId].append([genomeNr, result, rounds])
-        self.gameMetas[genomeId][0] += 1
-        if self.gameMetas[genomeId][0] >= self.gameMetas[genomeId][1]:
+        self.pendingRuns[genomeId] -= 1
+        if self.pendingRuns[genomeId] == 0:
             self.returnGameResults(genomeId)
+        else:
+            self.startPlayerServer(genomeId, self.genome[genomeId])
 
     def returnGameResults(self, genomeId):
         jsonGameResults = {"genomeId": genomeId,
                            "gameResults": self.gameResults[genomeId]}
-        requests.post(self.gameMetas[genomeId][2], json=jsonGameResults)
+        requests.post(self.callbackURL[genomeId], json=jsonGameResults)
 
 
 trainingServerPort = 50124
@@ -117,7 +136,8 @@ def launchGameServer():
         actor.numPossibleActions, pre.inputVectorSize))
     route("/", "POST", gs.gamePlayer)
     BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
-    run(host=gameServerIP, port=gameServerPort, quiet=True)
+    run(host=gameServerIP, port=gameServerPort, quiet=True, server='tornado')
+
 
 if trainingMode:
     launchTrainingServer()

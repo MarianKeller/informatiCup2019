@@ -159,7 +159,7 @@ def startEvolution():
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
                    elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
-    for i in range(10):
+    for i in range(100):
         while not p.canEvolve:
             sleep(0.5)
         p.evolve()
@@ -193,4 +193,4 @@ def main():
 
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 run(host=FitnessServer.geneticServerIP,
-    port=FitnessServer.geneticServerPort, quiet=True)
+    port=FitnessServer.geneticServerPort, quiet=True, server='tornado')

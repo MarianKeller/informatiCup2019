@@ -21,7 +21,7 @@ class FitnessServer():
     geneticServerUrl = "http://localhost:50122"
     geneticServerIP = "0.0.0.0"
 
-    genomeRunCount = 2
+    genomeRunCount = 5
 
     def __init__(self):
         self.__fitnessDict = {}
