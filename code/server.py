@@ -9,7 +9,7 @@ import preprocessor as pre
 import os
 
 trainingMode = True
-consoleOutput = True
+consoleOutput = False
 
 if os.name == 'posix':
     gameFilePath = "ic20/ic20_linux"
@@ -75,8 +75,9 @@ class trainingServer(object):
             ps = playerServer(genomeId, i, self, genome)
             path = "/" + genomeId + str(i)
             route(path, "POST", ps.gamePlayer)
-            subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path,
-                              "-o", "logs/log_" + genomeId, str(i) + ".txt"])
+            # subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path,
+            #                   "-o", "logs/log_" + genomeId, str(i) + ".txt"])
+            subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path])
             if consoleOutput:
                 print(genomeId, " playing at: ", path)
 

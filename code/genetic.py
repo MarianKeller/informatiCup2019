@@ -160,7 +160,7 @@ def startEvolution():
                    elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
     for i in range(10):
-        if not p.canEvolve:
+        while not p.canEvolve:
             sleep(0.5)
         p.evolve()
         if p.lastGeneration:

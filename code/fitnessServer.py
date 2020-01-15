@@ -65,6 +65,6 @@ class FitnessServer():
         self.__callback = callback
         self.__individuals = [
             individual for individual in individuals if individual.fitness is None]
-        self.__pendingCalculations = len(individuals)
+        self.__pendingCalculations = len(self.__individuals)
         for individual in self.__individuals:
             individual.ID = self.__evaluateGenome(individual.genome)
