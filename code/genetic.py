@@ -1,4 +1,6 @@
+import json
 import math
+import os
 import threading
 import time
 from collections import namedtuple
@@ -10,10 +12,13 @@ from typing import Callable, Dict, List, Tuple
 import numpy as np
 from bottle import BaseRequest, post, request, route, run
 
+import jsonlines
 from fitnessServer import FitnessServer
 from individual import Individual
 from postprocessor import numPossibleActions
 from preprocessor import inputVectorSize
+
+genPath = "gens/"
 
 
 class Population:
@@ -158,13 +163,23 @@ def startEvolution():
         if not p.canEvolve:
             sleep(0.5)
         p.evolve()
-        if p.generation > 0:
+        if p.lastGeneration:
             gen = p.generation
             fitnesses = [individual.fitness for individual in p.lastGeneration]
             minFitness = min(fitnesses)
             maxFitness = max(fitnesses)
             avgFitness = np.average(fitnesses)
             stdFitness = np.std(fitnesses)
+            lastGenList = [
+                {"genome": individual.genome.tolist(),
+                 "fitness": individual.fitness}
+                for individual in p.lastGeneration
+            ]
+            if not os.path.exists(genPath):
+                os.makedirs(genPath)
+            with jsonlines.open(genPath + "gen" + str(gen) + ".json", mode="w") as writer:
+                for individual in lastGenList:
+                    writer.write(individual)
             print('gen:', str(gen) + ',', 'min:', str(minFitness) + ',', 'max:', str(maxFitness) + ',',
                   'average:', str(avgFitness) + ',', 'standard deviation:', str(stdFitness))
 
