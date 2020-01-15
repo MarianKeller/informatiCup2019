@@ -9,6 +9,7 @@ import preprocessor as pre
 import os
 
 trainingMode = True
+consoleOutput = False
 
 if os.name == 'posix':
     gameFilePath = "ic20/ic20_linux"
@@ -28,23 +29,26 @@ class playerServer(object):
     def gamePlayer(self):
         gameDict = request.json
         game = GameWrapper(gameDict)
-        print(f'round: {game.getRound()}, outcome: {game.getOutcome()}')
+        if consoleOutput:
+            print(f'round: {game.getRound()}, outcome: {game.getOutcome()}')
         if(game.getOutcome() == 'pending'):
             action = actor.action(
                 game, self.genome, doManualOptimizations=(not self.hasTrainer))
-            # action = GameWrapper.doEndRound() # TODO: remove this line
-            print("numPossibleActions: ", actor.numPossibleActions,
+            if consoleOutput:
+                print("numPossibleActions: ", actor.numPossibleActions,
                   "inputVectorSize: ", pre.inputVectorSize)
-            print(self.genomeId, str(self.genomeCount), " action:", action, "\n")
+                print(self.genomeId, str(self.genomeCount), " action:", action, "\n")
             return action
         else:
             if self.hasTrainer:
-                print(self.genomeId, str(self.genomeCount), " from trainer: ",
+                if consoleOutput:
+                    print(self.genomeId, str(self.genomeCount), " from trainer: ",
                       game.getOutcome(), " round: ", game.getRound())
                 self.myTrainer.collectGameResult(
                     self.genomeCount, game.getOutcome(), game.getRound())
             else:
-                print(game.getOutcome(), " round: ", game.getRound())
+                if consoleOutput:
+                    print(game.getOutcome(), " round: ", game.getRound())
         return ""
 
 
@@ -57,7 +61,8 @@ class trainingServer(object):
 
     def startGameWithGenome(self):
         params = request.json
-        print(params)
+        if consoleOutput:
+            print(params)
         self.parseRequest(params)
 
         self.gameResults = []
@@ -68,7 +73,8 @@ class trainingServer(object):
             route(path, "POST", ps.gamePlayer)
             subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path,
                               "-o", "logs/log_" + self.genomeId, str(i) + ".txt"])
-            print(self.genomeId, " playing at: ", path)
+            if consoleOutput:
+                print(self.genomeId, " playing at: ", path)
 
         return {"id": self.genomeId, "state": "started"}
 

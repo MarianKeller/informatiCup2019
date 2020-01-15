@@ -44,7 +44,6 @@ class FitnessServer():
             fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
             fitnessVec.append(fitness)
         self.__fitnessDict[genomeID] = numpy.median(fitnessVec)
-        print(self.__fitnessDict[genomeID])
         self.__pendingCalculations -= 1
         self.__computedResult()
         return "ACK"

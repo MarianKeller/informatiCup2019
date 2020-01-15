@@ -78,7 +78,6 @@ def action(game: gw, weightMat, doManualOptimizations, safetyAdjustments=True):
 
     weightedActions = []
     for city, pathogen, inputStateVec in pre.vectorizeState(game):
-        print(pathogen)
         actionWeightVec = np.dot(weightMat, inputStateVec)
         # Not implemented for simplicity, originally: np.dot(roundsMat, inputStateVec)
         numberRoundsVec = [1, 1, 1]
