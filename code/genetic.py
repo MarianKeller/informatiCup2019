@@ -177,7 +177,7 @@ def startEvolution():
             ]
             if not os.path.exists(genPath):
                 os.makedirs(genPath)
-            with jsonlines.open(genPath + "gen" + str(gen) + ".json", mode="w") as writer:
+            with jsonlines.open(genPath + "gen" + str(gen) + ".jsonl", mode="w") as writer:
                 for individual in lastGenList:
                     writer.write(individual)
             print('gen:', str(gen) + ',', 'min:', str(minFitness) + ',', 'max:', str(maxFitness) + ',',
