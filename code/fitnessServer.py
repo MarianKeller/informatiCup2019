@@ -2,9 +2,8 @@ import json
 from hashlib import blake2s
 
 import numpy
-from bottle import BaseRequest, post, request, route, run
-
 import requests
+from bottle import BaseRequest, post, request, route, run
 
 import individual
 
@@ -17,7 +16,7 @@ def hashBlake2(val, hSize=32):
     return h.hexdigest()
 
 
-class FitnessServer(object):
+class FitnessServer():
     geneticServerPort = 50122
     geneticServerUrl = "http://localhost:50122"
     geneticServerIP = "0.0.0.0"
@@ -25,85 +24,47 @@ class FitnessServer(object):
     genomeRunCount = 2
 
     def __init__(self):
-        self.genomeFitnessDictionary = {}
-        #BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
-        #run(host=FitnessServer.geneticServerIP, port=FitnessServer.geneticServerPort, quiet=True)
+        self.__fitnessDict = {}
+        self.__callback = None
+        self.__pendingCalculations = 0
 
-    def launchCallbackServer(self, path):
-        route(path, "POST", self.computeFitness)
+    def __computedResult(self):
+        if self.__pendingCalculations == 0:
+            for individual in self.__individuals:
+                individual.fitness = self.__fitnessDict[individual.ID]
+            self.__callback()
 
-    def computeFitness(self):
+    def __computeFitness(self):
         params = request.json
-        genomeId = params["genomeId"]
-        fitnessVect = []
+        genomeID = params["genomeId"]
+        fitnessVec = []
         for [genomeNr, result, rounds] in params["gameResults"]:
-            intResult = int(result == "win")
-            fitnessVect.append(0.5 + ((-1) ** (intResult+1))*(1/(1+numpy.log(rounds)))*0.5)
-        self.genomeFitnessDictionary[genomeId] = numpy.median(fitnessVect)
-        self.resultsArrived = self.resultsArrived + 1
-
-        self.callbackFunction(genomeId, self.genomeFitnessDictionary[genomeId])
-        
-        print(fitnessVect, " median: ", self.genomeFitnessDictionary[genomeId])
+            win = int(result == "win")
+            def phi(x): return 1/(1+numpy.log(x))
+            fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
+            fitnessVec.append(fitness)
+        self.__fitnessDict[genomeID] = numpy.median(fitnessVec)
+        print(self.__fitnessDict[genomeID])
+        self.__pendingCalculations -= 1
+        self.__computedResult()
         return "ACK"
 
-    def evaluateGenome(self, genome, callbackFunction):
-        self.callbackFunction = callbackFunction
-        genomeId = str(hashBlake2(genome.tostring(), 10))
-        self.launchCallbackServer("/genomeperformance/" + genomeId)
+    def __launchCallbackServer(self, path):
+        route(path, "POST", self.__computeFitness)
 
-        postData = {"genomeId": genomeId,
-                    "callbackUrl": FitnessServer.geneticServerUrl + "/genomeperformance/" + genomeId,
+    def __evaluateGenome(self, genome):
+        genomeID = str(hashBlake2(genome.tostring(), 10))
+        self.__launchCallbackServer("/genomeperformance/" + genomeID)
+        postData = {"genomeId": genomeID,
+                    "callbackUrl": FitnessServer.geneticServerUrl + "/genomeperformance/" + genomeID,
                     "runCount": FitnessServer.genomeRunCount,
                     "genome": genome.tolist()}
-
         print(requests.post(trainingServerUrl + "/startwithgenome", json=postData))
-        return genomeId
+        return genomeID
 
-
-    def getAsyncFitnessList(self, individualsList, fitnessListComplete):
-        self.fitnessListComplete = fitnessListComplete
-        self.asyncGenomeIds = []
-        self.individualsList = individualsList
-        for specimen in self.individualsList:
-            self.asyncGenomeIds.append(self.evaluateGenome(specimen.genome, self.asyncCallback))
-        self.resultsArrived = 0
-
-    def asyncCallback(self, genomeId, fitness):
-        self.genomeFitnessDictionary[genomeId] = fitness
-        print("asyncCallback single:",  fitness)
-        if self.resultsArrived >= len(self.asyncGenomeIds):
-            for i in range(0, len(self.individualsList)):
-                print("asyncCallback: ", self.genomeFitnessDictionary[self.asyncGenomeIds[i]])
-                self.individualsList[i].fitness = self.genomeFitnessDictionary[self.asyncGenomeIds[i]]
-            
-            self.fitnessListComplete()
-
-
-    def getSyncFitnessList(self, genomeList):
-        genomeIds = []
-        genomeFitness = []
-        self.resultsArrived = 0
-
-        for genome in genomeList:
-            genomeIds.append(self.evaluateGenome(genome, self.syncCallback))
-
-        while self.resultsArrived <= len(genomeList):
-            pass
-
-        self.resultsArrived = 0
-        for genomeId in genomeIds:
-            genomeFitness.append(genomeFitnessDictionary[genomeId])
-        return genomeFitness
-
-    def syncCallback(self):
-        pass
-
-
-def resultReady(genomeId, medianFitness):
-    print("result: ", medianFitness)
-
-
-# fitServ = fitnessServer() # TODO
-# fitServ.evaluateGenome(numpy.random.rand(12, 31), resultReady) # TODO
-#
+    def evaluateGenomes(self, individuals, callback):
+        self.__callback = callback
+        self.__individuals = individuals
+        self.__pendingCalculations = len(individuals)
+        for individual in self.__individuals:
+            individual.ID = self.__evaluateGenome(individual.genome)

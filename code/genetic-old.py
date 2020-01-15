@@ -15,6 +15,7 @@ from postprocessor import numPossibleActions
 from time import sleep
 
 from individual import Individual
+from threading import Thread
 
 
 class Population:
@@ -49,8 +50,6 @@ class Population:
 
     @staticmethod
     def __cumulativeFitness(population):
-        #for individual in population:
-            #print(individual.genome, "  ", individual.fitness)
         return sum(individual.fitness for individual in population)
 
     @staticmethod
@@ -147,7 +146,7 @@ class Population:
 
     def evolve(self):
         while not self.__evolve:
-            sleep(1)
+            sleep(0.5)
         if self.activePopulation is None:
             self.activePopulation = Population.__createPopulation(
                 self.populationSize, self.lowerLimit, self.upperLimit, self.shape)
@@ -156,12 +155,9 @@ class Population:
         self.__evaluateGeneration(callback=self.__cleanup)
 
 
-@post("/main")
-def main():
-    print("Hi!")
+def startEvolution():
     fs = FitnessServer()
-
-    p = Population(fitnessFunction=lambda pop, callb: fs.getAsyncFitnessList(pop, callb), populationSize=2,
+    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=2,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
     for i in range(2):
@@ -175,6 +171,12 @@ def main():
 
     print('min:', minFitness, ', max:', maxFitness, ', average:',
           averageFitness, 'standard deviation:', stdFitness)
+
+
+@post("/main")
+def main():
+    thread = Thread(target=startEvolution)
+    thread.start()
 
     return "main"
 
