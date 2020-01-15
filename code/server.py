@@ -9,7 +9,7 @@ import preprocessor as pre
 import os
 
 trainingMode = True
-consoleOutput = False
+consoleOutput = True
 
 if os.name == 'posix':
     gameFilePath = "ic20/ic20_linux"
