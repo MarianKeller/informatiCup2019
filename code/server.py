@@ -72,8 +72,9 @@ class trainingServer(object):
         route(path, "POST", ps.gamePlayer)
         # subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path,
         #                   "-o", "logs/log_" + genomeId, str(i) + ".txt"])
+        nullFile = "./nul" if os.name == "nt" else "/dev/null"
         subprocess.Popen(
-            [gameFilePath, "-u", trainingServerUrl + path, "-o", "/dev/null"])
+            [gameFilePath, "-u", trainingServerUrl + path, "-o", nullFile, "-t", "0"])
         # subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path])
         if consoleOutput:
             print(genomeId, " playing at: ", path)
@@ -101,6 +102,7 @@ class trainingServer(object):
         return {"id": genomeId, "state": "started"}
 
     def collectGameResult(self, genomeNr, genomeId, result, rounds):
+        print("evaluated " + str(genomeId) + "_" + str(genomeNr))
         self.gameResults[genomeId].append([genomeNr, result, rounds])
         self.pendingRuns[genomeId] -= 1
         if self.pendingRuns[genomeId] == 0:

@@ -6,6 +6,7 @@ import requests
 from bottle import BaseRequest, post, request, route, run
 
 import individual
+from time import sleep
 
 trainingServerUrl = "http://localhost:50124"
 
@@ -21,7 +22,7 @@ class FitnessServer():
     geneticServerUrl = "http://localhost:50122"
     geneticServerIP = "0.0.0.0"
 
-    genomeRunCount = 5
+    genomeRunCount = 14
 
     def __init__(self):
         self.__fitnessDict = {}
@@ -52,6 +53,7 @@ class FitnessServer():
         route(path, "POST", self.__computeFitness)
 
     def __evaluateGenome(self, genome):
+
         genomeID = str(hashBlake2(genome.tostring(), 10))
         self.__launchCallbackServer("/genomeperformance/" + genomeID)
         postData = {"genomeId": genomeID,
@@ -66,5 +68,8 @@ class FitnessServer():
         self.__individuals = [
             individual for individual in individuals if individual.fitness is None]
         self.__pendingCalculations = len(self.__individuals)
-        for individual in self.__individuals:
+        for i in range(len(self.__individuals)):
+            if i % 8 == 0:
+                sleep(4)
+            individual = self.__individuals[i]
             individual.ID = self.__evaluateGenome(individual.genome)
