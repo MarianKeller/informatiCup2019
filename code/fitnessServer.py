@@ -22,7 +22,7 @@ class FitnessServer(object):
     geneticServerUrl = "http://localhost:50122"
     geneticServerIP = "0.0.0.0"
 
-    genomeRunCount = 20
+    genomeRunCount = 2
 
     def __init__(self):
         self.genomeFitnessDictionary = {}
@@ -57,7 +57,7 @@ class FitnessServer(object):
                     "runCount": FitnessServer.genomeRunCount,
                     "genome": genome.tolist()}
 
-        requests.post(trainingServerUrl + "/startwithgenome", json=postData)
+        print(requests.post(trainingServerUrl + "/startwithgenome", json=postData))
         return genomeId
 
 
@@ -71,8 +71,10 @@ class FitnessServer(object):
 
     def asyncCallback(self, genomeId, fitness):
         self.genomeFitnessDictionary[genomeId] = fitness
+        print("asyncCallback single:",  fitness)
         if self.resultsArrived >= len(self.asyncGenomeIds):
             for i in range(0, len(self.individualsList)):
+                print("asyncCallback: ", self.genomeFitnessDictionary[self.asyncGenomeIds[i]])
                 self.individualsList[i].fitness = self.genomeFitnessDictionary[self.asyncGenomeIds[i]]
             
             self.fitnessListComplete()

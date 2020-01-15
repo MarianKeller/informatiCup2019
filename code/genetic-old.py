@@ -49,8 +49,8 @@ class Population:
 
     @staticmethod
     def __cumulativeFitness(population):
-        for individual in population:
-            print(individual.genome, "  ", individual.fitness)
+        #for individual in population:
+            #print(individual.genome, "  ", individual.fitness)
         return sum(individual.fitness for individual in population)
 
     @staticmethod
@@ -116,13 +116,17 @@ class Population:
         self.generation = 0
         self.activePopulation = activePopulation
         self.lastGeneration = None
+        self.__evolve = True
 
     def __cleanup(self):
+        print("cleanup")
         self.activePopulation.sort(key=lambda x: x.fitness, reverse=True)
         self.generation += 1
         self.lastGeneration = copy.deepcopy(self.activePopulation)
+        self.__evolve = True
 
     def __evaluateGeneration(self, callback):
+        self.__evolve = False
         self.fitnessFunction(self.activePopulation, callback)
 
     def __applyGeneticOperators(self):
@@ -142,6 +146,8 @@ class Population:
         self.activePopulation = newGeneration
 
     def evolve(self):
+        while not self.__evolve:
+            sleep(1)
         if self.activePopulation is None:
             self.activePopulation = Population.__createPopulation(
                 self.populationSize, self.lowerLimit, self.upperLimit, self.shape)
@@ -152,6 +158,7 @@ class Population:
 
 @post("/main")
 def main():
+    print("Hi!")
     fs = FitnessServer()
 
     p = Population(fitnessFunction=lambda pop, callb: fs.getAsyncFitnessList(pop, callb), populationSize=2,
