@@ -58,7 +58,7 @@ class FitnessServer():
                     "callbackUrl": FitnessServer.geneticServerUrl + "/genomeperformance/" + genomeID,
                     "runCount": FitnessServer.genomeRunCount,
                     "genome": genome.tolist()}
-        print(requests.post(trainingServerUrl + "/startwithgenome", json=postData))
+        requests.post(trainingServerUrl + "/startwithgenome", json=postData)
         return genomeID
 
     def evaluateGenomes(self, individuals, callback):
