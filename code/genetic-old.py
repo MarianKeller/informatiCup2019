@@ -3,19 +3,17 @@ import threading
 import time
 from collections import namedtuple
 from copy import deepcopy
+from threading import Thread
+from time import sleep
 from typing import Callable, Dict, List, Tuple
 
 import numpy as np
-
-from fitnessServer import FitnessServer
 from bottle import BaseRequest, post, request, route, run
 
-from preprocessor import inputVectorSize
-from postprocessor import numPossibleActions
-from time import sleep
-
+from fitnessServer import FitnessServer
 from individual import Individual
-from threading import Thread
+from postprocessor import numPossibleActions
+from preprocessor import inputVectorSize
 
 
 class Population:
@@ -27,18 +25,6 @@ class Population:
     def __createPopulation(populationSize, lowerLimit, upperLimit, shape: Tuple[int, ...]):
         return [Population.__createIndividual(lowerLimit, upperLimit, shape) for i in range(populationSize)]
 
-    # TODO delete
-    # @staticmethod
-    def __rate(fitnessFunction, generation):
-        pass
-        # fitnesses = fitnessFunction(generation)
-        # return [RatedIndividual(individual[0], individual[1]) for individual in zip(fitnesses, generation)]
-
-        # TODO delete
-        # @staticmethod
-        # def __unrate(ratedGeneration):
-        #     return [individual.genes for individual in ratedGeneration]
-
     @staticmethod
     def __rouletteSelect(population, cumulativeFitness):
         pick = np.random.uniform(0, cumulativeFitness)
@@ -47,6 +33,14 @@ class Population:
             current += individual.fitness
             if current > pick:
                 return individual
+
+    @staticmethod
+    def __tournamenetSelect(population, tournamentSize, numSelect):
+        competitorIndices = np.random.choice(len(population), tournamentSize)
+        competitors = [population[i] for i in competitorIndices]
+        competitors.sort(key=lambda x: x.fitness, reverse=True)
+        winners = [competitors[i] for i in range(numSelect)]
+        return winners
 
     @staticmethod
     def __cumulativeFitness(population):
@@ -66,17 +60,14 @@ class Population:
                 high = len(survivors)-1
                 rnd = 0 if low == high else np.random.randint(
                     low=low, high=high)
-                survivors[rnd] = elit
-                # TODO do not sort again, just remove survivors[rnd] and insert elit at beginning of list
-                survivors.sort(key=lambda x: x.fitness, reverse=True)
+                del survivors[rnd]
+                survivors.insert(0, elit)
         return survivors
 
     @staticmethod
     def __pair(population, numBabies):
         """using roulette wheel selection"""
-        # TODO use tournament selection; introduce self.tournamentSize member
-        cumulativeFitness = Population.__cumulativeFitness(population)
-        return [(Population.__rouletteSelect(population, cumulativeFitness), Population.__rouletteSelect(population, cumulativeFitness)) for i in range(numBabies)]
+        return [(Population.__tournamentSelect(population, self.tournamentSize, 2)) for i in range(numBabies)]
 
     @staticmethod
     def __mate(parentList):
@@ -101,7 +92,7 @@ class Population:
                         low=lowerLimit, high=upperLimit, size=genes[j].shape)
         return mutatedGeneration
 
-    def __init__(self, fitnessFunction: Callable, populationSize, lowerLimit, upperLimit, shape,
+    def __init__(self, fitnessFunction: Callable, populationSize, lowerLimit, upperLimit, shape, tournamentSize,
                  selectionPressure=0.5, mutationRate=0.01, elitism=True, activePopulation=None, graveyard: List = []):
         # note: selection mechanism requires fitness >= 0
         self.fitnessFunction = fitnessFunction
@@ -110,6 +101,7 @@ class Population:
         self.upperLimit = upperLimit
         self.shape = shape
         self.selectionPressure = selectionPressure
+        self.tournamentSize = tournamentSize
         self.mutationRate = mutationRate
         self.elitism = elitism
         self.generation = 0
@@ -158,7 +150,8 @@ class Population:
 def startEvolution():
     fs = FitnessServer()
     p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=2,
-                   lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), elitism=True, mutationRate=0.01, selectionPressure=0.5)
+                   lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
+                   elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
     for i in range(2):
         p.evolve()
