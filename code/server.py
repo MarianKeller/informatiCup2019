@@ -44,7 +44,7 @@ class playerServer(object):
                     print(self.genomeId, str(self.genomeCount), " from trainer: ",
                       game.getOutcome(), " round: ", game.getRound())
                 self.myTrainer.collectGameResult(
-                    self.genomeCount, game.getOutcome(), game.getRound())
+                    self.genomeCount, self.genomeId, game.getOutcome(), game.getRound())
             else:
                 if consoleOutput:
                     print(game.getOutcome(), " round: ", game.getRound())
@@ -52,39 +52,45 @@ class playerServer(object):
 
 
 class trainingServer(object):
-    def parseRequest(self, params):
-        self.genomeId = params["genomeId"]
-        self.callbackUrl = params["callbackUrl"]
-        self.runCount = params["runCount"]
-        self.genome = np.array(params["genome"])
+    def __init__(self):
+        self.gameResults = {}
+        self.gameMetas = {}
 
     def startGameWithGenome(self):
         params = request.json
+
         if consoleOutput:
             print(params)
-        self.parseRequest(params)
 
-        self.gameResults = []
+        # parse request
+        genomeId = params["genomeId"]
+        callbackUrl = params["callbackUrl"]
+        runCount = params["runCount"]
+        genome = np.array(params["genome"])
 
-        for i in range(0, self.runCount):
-            ps = playerServer(self.genomeId, i, self, self.genome)
-            path = "/" + self.genomeId + str(i)
+        self.gameResults[genomeId] = []
+        self.gameMetas[genomeId] = [0, runCount]
+
+        for i in range(0, runCount):
+            ps = playerServer(genomeId, i, self, genome)
+            path = "/" + genomeId + str(i)
             route(path, "POST", ps.gamePlayer)
             subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path,
-                              "-o", "logs/log_" + self.genomeId, str(i) + ".txt"])
+                              "-o", "logs/log_" + genomeId, str(i) + ".txt"])
             if consoleOutput:
-                print(self.genomeId, " playing at: ", path)
+                print(genomeId, " playing at: ", path)
 
-        return {"id": self.genomeId, "state": "started"}
+        return {"id": genomeId, "state": "started"}
 
-    def collectGameResult(self, genomeNr, result, rounds):
-        self.gameResults.append([genomeNr, result, rounds])
-        if len(self.gameResults) >= self.runCount:
-            self.returnGameResults()
+    def collectGameResult(self, genomeNr, genomeId, result, rounds):
+        self.gameResults[genomeId].append([genomeNr, result, rounds])
+        self.gameMetas[genomeId][0] += 1
+        if self.gameMetas[genomeId][0] >= self.gameMetas[genomeId][1]:
+            self.returnGameResults(genomeId)
 
-    def returnGameResults(self):
-        jsonGameResults = {"genomeId": self.genomeId,
-                           "gameResults": self.gameResults}
+    def returnGameResults(self, genomeId):
+        jsonGameResults = {"genomeId": genomeId,
+                           "gameResults": self.gameResults[genomeId]}
         requests.post(self.callbackUrl, json=jsonGameResults)
 
 
