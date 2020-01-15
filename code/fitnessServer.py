@@ -31,7 +31,7 @@ class FitnessServer():
     def __computedResult(self):
         if self.__pendingCalculations == 0:
             for individual in self.__individuals:
-                if individual.ID in self.__fitnessDict:
+                if self.__fitnessDict.get(individual.ID) != None:
                     individual.fitness = self.__fitnessDict[individual.ID]
             self.__callback()
 
@@ -39,7 +39,7 @@ class FitnessServer():
         params = request.json
         genomeID = params["genomeId"]
         fitnessVec = []
-        if !(genomeID in self.__fitnessDict):
+        if self.__fitnessDict.get(genomeID) == None:
             for [genomeNr, result, rounds] in params["gameResults"]:
                 win = int(result == "win")
                 def phi(x): return 1/(1+numpy.log(x))
