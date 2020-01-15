@@ -23,7 +23,6 @@ class playerServer(object):
         self.myTrainer = trainer
         self.genomeId = id
         self.genomeCount = count
-        # TODO: specify genome format, pass from request and actually use the passed genome
         self.genome = genome
 
     def gamePlayer(self):
