@@ -1,173 +1,181 @@
-# This file contains code from the DEAP examples written by De Rainville et al.
-import random
-import numpy
+import math
+import threading
+import time
+from collections import namedtuple
+from copy import deepcopy
+from threading import Thread
+from time import sleep
+from typing import Callable, Dict, List, Tuple
 
-import fitnessServer
-
+import numpy as np
 from bottle import BaseRequest, post, request, route, run
 
-from deap import base
-from deap import creator
-from deap import tools
+from fitnessServer import FitnessServer
+from individual import Individual
+from postprocessor import numPossibleActions
+from preprocessor import inputVectorSize
 
 
-creator.create("FitnessMax", base.Fitness, weights=(1.0,))
-creator.create("Individual", numpy.ndarray, fitness=creator.FitnessMax)
+class Population:
+    @staticmethod
+    def __createIndividual(lowerLimit, upperLimit, shape):
+        return Individual(np.random.uniform(low=lowerLimit, high=upperLimit, size=shape))
 
-toolbox = base.Toolbox()
+    @staticmethod
+    def __createPopulation(populationSize, lowerLimit, upperLimit, shape: Tuple[int, ...]):
+        return [Population.__createIndividual(lowerLimit, upperLimit, shape) for i in range(populationSize)]
 
-# Attribute generator
-#                      define 'attr_bool' to be an attribute ('gene')
-#                      which corresponds to floats sampled uniformly
-#                      from the range [0,1] 
-toolbox.register("attr_float", random.rand, 0, 1)
-#numpy.random.rand(12, 31),
+    @staticmethod
+    def __rouletteSelect(population, cumulativeFitness):
+        pick = np.random.uniform(0, cumulativeFitness)
+        current = 0
+        for individual in population:
+            current += individual.fitness
+            if current > pick:
+                return individual
 
-# Structure initializers
-#                         define 'individual' to be an individual
-#                         consisting of random n x m array
-toolbox.register("individual", numpy.random.rand, 12, 31) # TODO: change matrix dimensions to correct ones
+    @staticmethod
+    def __tournamentSelect(population, tournamentSize, numSelect):
+        competitorIndices = np.random.choice(len(population), tournamentSize)
+        competitors = [population[i] for i in competitorIndices]
+        competitors.sort(key=lambda x: x.fitness, reverse=True)
+        winners = [competitors[i] for i in range(numSelect)]
+        return winners
+
+    @staticmethod
+    def __cumulativeFitness(population):
+        return sum(individual.fitness for individual in population)
+
+    @staticmethod
+    def __select(population, numSurvivors, elitism):
+        """using roulette wheel selection"""
+        elit = max(population, key=lambda x: x.fitness)
+        cumulativeFitness = Population.__cumulativeFitness(population)
+        survivors = [Population.__rouletteSelect(
+            population, cumulativeFitness) for i in range(numSurvivors)]
+        if elitism:
+            bestSurvivor = max(survivors, key=lambda x: x.fitness)
+            if bestSurvivor.fitness < elit.fitness:
+                low = 0
+                high = len(survivors) - 1
+                rnd = 0 if low == high else np.random.randint(
+                    low=low, high=high)
+                del survivors[rnd]
+                survivors.insert(0, elit)
+        return survivors
+
+    @staticmethod
+    def __pair(population, numBabies, tournamentSize):
+        """using tournament selection"""
+        return [(Population.__tournamentSelect(population, tournamentSize, 2)) for i in range(numBabies)]
+
+    @staticmethod
+    def __mate(parentList):
+        babies = []
+        for father, mother in parentList:
+            baby = Individual(np.empty(father.genome.shape))
+            for i in range(baby.genome.shape[0]):
+                choice = np.random.choice([False, True])
+                baby.genome[i] = father.genome[i] if choice else mother.genome[i]
+            babies.append(baby)
+        return babies
+
+    @staticmethod
+    def __mutate(generation, lowerLimit, upperLimit, mutationRate, elitism):
+        mutatedGeneration = deepcopy(generation)
+        start = 0 if not elitism else 1
+        for i in range(start, len(mutatedGeneration)):
+            genome = mutatedGeneration[i].genome
+            for j in range(genome.shape[0]):
+                if np.random.choice([True, False], p=[mutationRate, 1-mutationRate]):
+                    genome[j] = np.random.uniform(
+                        low=lowerLimit, high=upperLimit, size=genome[j].shape)
+        return mutatedGeneration
+
+    def __init__(self, fitnessFunction: Callable, populationSize, lowerLimit, upperLimit, shape, tournamentSize,
+                 selectionPressure=0.5, mutationRate=0.01, elitism=True, activePopulation=None, graveyard: List = []):
+        # note: selection mechanism requires fitness >= 0
+        self.fitnessFunction = fitnessFunction
+        self.populationSize = populationSize
+        self.lowerLimit = lowerLimit
+        self.upperLimit = upperLimit
+        self.shape = shape
+        self.selectionPressure = selectionPressure
+        self.tournamentSize = tournamentSize
+        self.mutationRate = mutationRate
+        self.elitism = elitism
+        self.generation = 0
+        self.activePopulation = activePopulation
+        self.lastGeneration = None
+        self.canEvolve = True
+
+    def __cleanup(self):
+        self.lastGeneration = deepcopy(self.activePopulation)
+        self.lastGeneration.sort(key=lambda x: x.fitness, reverse=True)
+        self.generation += 1
+        self.canEvolve = True
+
+    def __evaluateGeneration(self, callback):
+        self.canEvolve = False
+        self.fitnessFunction(self.activePopulation, callback)
+
+    def __applyGeneticOperators(self):
+        finalPopulationSize = len(self.activePopulation)
+        numSurvivors = math.ceil(
+            (1 - self.selectionPressure) * len(self.activePopulation))
+        numBabies = finalPopulationSize - numSurvivors
+
+        population = Population.__select(
+            self.activePopulation, numSurvivors, self.elitism)
+        parentList = Population.__pair(
+            population, numBabies, self.tournamentSize)
+        babies = Population.__mate(parentList)
+        newGeneration = population
+        newGeneration.extend(babies)
+        newGeneration = Population.__mutate(
+            newGeneration, self.lowerLimit, self.upperLimit, self.mutationRate, self.elitism)
+
+        self.activePopulation = newGeneration
+
+    def evolve(self):
+        while not self.canEvolve:
+            sleep(0.5)
+        if self.activePopulation is None:
+            self.activePopulation = Population.__createPopulation(
+                self.populationSize, self.lowerLimit, self.upperLimit, self.shape)
+        else:
+            self.__applyGeneticOperators()
+        self.__evaluateGeneration(callback=self.__cleanup)
 
 
-# define the population to be a list of individuals
-toolbox.register("population", tools.initRepeat, list, toolbox.individual)
+def startEvolution():
+    fs = FitnessServer()
+    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=10,
+                   lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
+                   elitism=True, mutationRate=0.01, selectionPressure=0.5)
+
+    for i in range(10):
+        if not p.canEvolve:
+            sleep(0.5)
+        p.evolve()
+        if p.generation > 0:
+            gen = p.generation
+            fitnesses = [individual.fitness for individual in p.lastGeneration]
+            minFitness = min(fitnesses)
+            maxFitness = max(fitnesses)
+            avgFitness = np.average(fitnesses)
+            stdFitness = np.std(fitnesses)
+            print('gen:', str(gen) + ',', 'min:', str(minFitness) + ',', 'max:', str(maxFitness) + ',',
+                  'average:', str(avgFitness) + ',', 'standard deviation:', str(stdFitness))
 
 
-# the goal ('fitness') function to be maximized
-def evalOneMax(population):
-    fs = fitnessServer()
-    return fs.getSyncFitnessList(population)
-
-
-# ----------
-# Operator registration
-# ----------
-# register the goal / fitness function
-toolbox.register("evaluate", evalOneMax)
-
-
-# register the crossover operator
-toolbox.register("mate", tools.cxTwoPoint)
-
-
-# register a mutation operator with a probability to
-# flip each attribute/gene of 0.05
-toolbox.register("mutate", tools.mutFlipBit, indpb=0.05)
-
-
-# operator for selecting individuals for breeding the next
-# generation: each individual of the current generation
-# is replaced by the 'fittest' (best) of three individuals
-# drawn randomly from the current generation.
-toolbox.register("select", tools.selTournament, tournsize=3)
-
-
-# ----------
+@post("/main")
 def main():
-    BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
-    run(host=fitnessServer.geneticServerIP, port=fitnessServer.geneticServerPort, quiet=True)
-    #random.seed()
-
-    # create an initial population of 100 individuals (where
-    # each individual is a list of nparrays)
-    pop = toolbox.population(n=100)
-
-    # CXPB  is the probability with which two individuals
-    #       are crossed
-    #
-    # MUTPB is the probability for mutating an individual
-
-    CXPB, MUTPB = 0.5, 0.2
-
-    print("Start of evolution")
-
-    # Evaluate the entire population
-    fitnesses = evalOneMax(pop)
-    #fitnesses = list(map(toolbox.evaluate, pop))
-
-    for ind, fit in zip(pop, fitnesses):
-        ind.fitness.values = fit
-
-    print("  Evaluated %i individuals" % len(pop))
-
-    # Extracting all the fitnesses of
-
-    fits = [ind.fitness.values[0] for ind in pop]
-
-    # Variable keeping track of the number of generations
-
-    g = 0
-
-    # Begin the evolution
-    while max(fits) < 100 and g < 1000:
-
-        # A new generation
-        g = g + 1
-        print("-- Generation %i --" % g)
-        # Select the next generation individuals
-        offspring = toolbox.select(pop, len(pop))
-        # Clone the selected individuals
-        offspring = list(map(toolbox.clone, offspring))
-        # Apply crossover and mutation on the offspring
-        for child1, child2 in zip(offspring[::2], offspring[1::2]):
-            # cross two individuals with probability CXPB
-            if random.random() < CXPB:
-                toolbox.mate(child1, child2)
-                # fitness values of the children
-                # must be recalculated later
-                del child1.fitness.values
-                del child2.fitness.values
-        for mutant in offspring:
-
-            # mutate an individual with probability MUTPB
-
-            if random.random() < MUTPB:
-
-                toolbox.mutate(mutant)
-
-                del mutant.fitness.values
-
-        # Evaluate the individuals with an invalid fitness
-
-        invalid_ind = [ind for ind in offspring if not ind.fitness.valid]
-
-        fitnesses = map(toolbox.evaluate, invalid_ind)
-
-        for ind, fit in zip(invalid_ind, fitnesses):
-
-            ind.fitness.values = fit
-
-        print("  Evaluated %i individuals" % len(invalid_ind))
-
-        # The population is entirely replaced by the offspring
-
-        pop[:] = offspring
-
-        # Gather all the fitnesses in one list and print the stats
-
-        fits = [ind.fitness.values[0] for ind in pop]
-
-        length = len(pop)
-
-        mean = sum(fits) / length
-
-        sum2 = sum(x*x for x in fits)
-
-        std = abs(sum2 / length - mean**2)**0.5
-
-        print("  Min %s" % min(fits))
-
-        print("  Max %s" % max(fits))
-
-        print("  Avg %s" % mean)
-
-        print("  Std %s" % std)
-
-    print("-- End of (successful) evolution --")
-
-    best_ind = tools.selBest(pop, 1)[0]
-
-    print("Best individual is %s, %s" % (best_ind, best_ind.fitness.values))
+    thread = Thread(target=startEvolution)
+    thread.start()
+    return "main"
 
 
-main()
+BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
+run(host=FitnessServer.geneticServerIP,
+    port=FitnessServer.geneticServerPort, quiet=True)
