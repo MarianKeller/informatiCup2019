@@ -35,7 +35,7 @@ class Population:
                 return individual
 
     @staticmethod
-    def __tournamenetSelect(population, tournamentSize, numSelect):
+    def __tournamentSelect(population, tournamentSize, numSelect):
         competitorIndices = np.random.choice(len(population), tournamentSize)
         competitors = [population[i] for i in competitorIndices]
         competitors.sort(key=lambda x: x.fitness, reverse=True)
@@ -49,15 +49,15 @@ class Population:
     @staticmethod
     def __select(population, numSurvivors, elitism):
         """using roulette wheel selection"""
+        elit = max(population, key=lambda x: x.fitness)
         cumulativeFitness = Population.__cumulativeFitness(population)
         survivors = [Population.__rouletteSelect(
             population, cumulativeFitness) for i in range(numSurvivors)]
-        survivors.sort(key=lambda x: x.fitness, reverse=True)
         if elitism:
-            elit = population[0]
-            if survivors[0].fitness != elit.fitness:
+            bestSurvivor = max(survivors, key=lambda x: x.fitness)
+            if bestSurvivor.fitness < elit.fitness:
                 low = 0
-                high = len(survivors)-1
+                high = len(survivors) - 1
                 rnd = 0 if low == high else np.random.randint(
                     low=low, high=high)
                 del survivors[rnd]
@@ -65,16 +65,16 @@ class Population:
         return survivors
 
     @staticmethod
-    def __pair(population, numBabies):
-        """using roulette wheel selection"""
-        return [(Population.__tournamentSelect(population, self.tournamentSize, 2)) for i in range(numBabies)]
+    def __pair(population, numBabies, tournamentSize):
+        """using tournament selection"""
+        return [(Population.__tournamentSelect(population, tournamentSize, 2)) for i in range(numBabies)]
 
     @staticmethod
     def __mate(parentList):
         babies = []
         for father, mother in parentList:
-            baby = Individual(np.empty(father.genes.shape))
-            for i in range(baby.shape[0]):
+            baby = Individual(np.empty(father.genome.shape))
+            for i in range(baby.genome.shape[0]):
                 choice = np.random.choice([False, True])
                 baby.genome[i] = father.genome[i] if choice else mother.genome[i]
             babies.append(baby)
@@ -85,11 +85,11 @@ class Population:
         mutatedGeneration = deepcopy(generation)
         start = 0 if not elitism else 1
         for i in range(start, len(mutatedGeneration)):
-            genes = mutatedGeneration[i]
-            for j in range(genes.shape[0]):
+            genome = mutatedGeneration[i].genome
+            for j in range(genome.shape[0]):
                 if np.random.choice([True, False], p=[mutationRate, 1-mutationRate]):
-                    genes[j] = np.random.uniform(
-                        low=lowerLimit, high=upperLimit, size=genes[j].shape)
+                    genome[j] = np.random.uniform(
+                        low=lowerLimit, high=upperLimit, size=genome[j].shape)
         return mutatedGeneration
 
     def __init__(self, fitnessFunction: Callable, populationSize, lowerLimit, upperLimit, shape, tournamentSize,
@@ -107,17 +107,16 @@ class Population:
         self.generation = 0
         self.activePopulation = activePopulation
         self.lastGeneration = None
-        self.__evolve = True
+        self.canEvolve = True
 
     def __cleanup(self):
-        print("cleanup")
-        self.activePopulation.sort(key=lambda x: x.fitness, reverse=True)
+        self.lastGeneration = deepcopy(self.activePopulation)
+        self.lastGeneration.sort(key=lambda x: x.fitness, reverse=True)
         self.generation += 1
-        self.lastGeneration = copy.deepcopy(self.activePopulation)
-        self.__evolve = True
+        self.canEvolve = True
 
     def __evaluateGeneration(self, callback):
-        self.__evolve = False
+        self.canEvolve = False
         self.fitnessFunction(self.activePopulation, callback)
 
     def __applyGeneticOperators(self):
@@ -128,8 +127,10 @@ class Population:
 
         population = Population.__select(
             self.activePopulation, numSurvivors, self.elitism)
-        parentList = Population.__pair(population, numBabies)
+        parentList = Population.__pair(
+            population, numBabies, self.tournamentSize)
         babies = Population.__mate(parentList)
+        newGeneration = population
         newGeneration.extend(babies)
         newGeneration = Population.__mutate(
             newGeneration, self.lowerLimit, self.upperLimit, self.mutationRate, self.elitism)
@@ -137,7 +138,7 @@ class Population:
         self.activePopulation = newGeneration
 
     def evolve(self):
-        while not self.__evolve:
+        while not self.canEvolve:
             sleep(0.5)
         if self.activePopulation is None:
             self.activePopulation = Population.__createPopulation(
@@ -149,28 +150,29 @@ class Population:
 
 def startEvolution():
     fs = FitnessServer()
-    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=2,
+    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=10,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
                    elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
-    for i in range(2):
+    for i in range(10):
+        if not p.canEvolve:
+            sleep(0.5)
         p.evolve()
-
-    fitnesses = [individual.fitness for individual in lastGeneration]
-    minFitness = min(fitnesses)
-    maxFitness = max(fitnesses)
-    avgFitness = np.average(fitnesses)
-    stdFitness = np.std(fitnesses)
-
-    print('min:', minFitness, ', max:', maxFitness, ', average:',
-          averageFitness, 'standard deviation:', stdFitness)
+        if p.generation > 0:
+            gen = p.generation
+            fitnesses = [individual.fitness for individual in p.lastGeneration]
+            minFitness = min(fitnesses)
+            maxFitness = max(fitnesses)
+            avgFitness = np.average(fitnesses)
+            stdFitness = np.std(fitnesses)
+            print('gen:', str(gen) + ',', 'min:', str(minFitness) + ',', 'max:', str(maxFitness) + ',',
+                  'average:', str(avgFitness) + ',', 'standard deviation:', str(stdFitness))
 
 
 @post("/main")
 def main():
     thread = Thread(target=startEvolution)
     thread.start()
-
     return "main"
 
 

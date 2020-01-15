@@ -91,7 +91,7 @@ class trainingServer(object):
     def returnGameResults(self, genomeId):
         jsonGameResults = {"genomeId": genomeId,
                            "gameResults": self.gameResults[genomeId]}
-        requests.post(self.gameMetas[genomeId][3], json=jsonGameResults)
+        requests.post(self.gameMetas[genomeId][2], json=jsonGameResults)
 
 
 trainingServerPort = 50124
