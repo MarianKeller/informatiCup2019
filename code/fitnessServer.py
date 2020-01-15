@@ -31,19 +31,21 @@ class FitnessServer():
     def __computedResult(self):
         if self.__pendingCalculations == 0:
             for individual in self.__individuals:
-                individual.fitness = self.__fitnessDict[individual.ID]
+                if self.__fitnessDict.get(individual.ID) != None:
+                    individual.fitness = self.__fitnessDict[individual.ID]
             self.__callback()
 
     def __computeFitness(self):
         params = request.json
         genomeID = params["genomeId"]
         fitnessVec = []
-        for [genomeNr, result, rounds] in params["gameResults"]:
-            win = int(result == "win")
-            def phi(x): return 1/(1+numpy.log(x))
-            fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
-            fitnessVec.append(fitness)
-        self.__fitnessDict[genomeID] = numpy.median(fitnessVec)
+        if self.__fitnessDict.get(genomeID) == None:
+            for [genomeNr, result, rounds] in params["gameResults"]:
+                win = int(result == "win")
+                def phi(x): return 1/(1+numpy.log(x))
+                fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
+                fitnessVec.append(fitness)
+            self.__fitnessDict[genomeID] = numpy.median(fitnessVec)
         self.__pendingCalculations -= 1
         self.__computedResult()
         return "ACK"
