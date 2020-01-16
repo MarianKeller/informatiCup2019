@@ -61,7 +61,7 @@ class PlayerServer(object):
             if consoleOutput:
                 print("numPossibleActions: ", actor.numPossibleActions,
                       "inputVectorSize: ", pre.inputVectorSize)
-                print(self.genomeId, str(self.genomeCount),
+                print(self.genomeId, str(self.myJob.pendingRuns),
                       " action:", action, "\n")
             return action
         else:
@@ -89,7 +89,7 @@ class trainingServer(object):
 
     def newJob(self):
         params = request.json
-        print(params)
+        
         # parse request
         genomeId = params["genomeId"]
         callbackUrl = params["callbackUrl"]
@@ -100,9 +100,7 @@ class trainingServer(object):
         self.__manager()
 
     def __manager(self):
-        if len(self.jobList) <= 0 or len(self.availablePlayerServers) <= 0:
-            return 0
-        for i in range(0, len(self.availablePlayerServers)):
+        while len(self.jobList) <= 0 and len(self.availablePlayerServers) <= 0:
             job = self.jobList[0]
             player = self.availablePlayerServers.pop()
             self.busyPlayerServers.append(player)
@@ -113,7 +111,7 @@ class trainingServer(object):
             self.bottleInstance.route(path, "POST", player.gamePlayer)
 
             subprocess.Popen(
-                [gameFilePath, "-u", trainingServerUrl + path, "-t 0"])
+                [gameFilePath, "-u", trainingServerUrl + path, "-t", "1000"])
 
             job.pendingRuns = job.pendingRuns - 1
 
