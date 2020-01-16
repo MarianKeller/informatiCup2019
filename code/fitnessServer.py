@@ -52,14 +52,13 @@ class FitnessServer():
         route(path, "POST", self.__computeFitness)
 
     def __evaluateGenome(self, genome):
-
         genomeID = str(hashBlake2(genome.tostring(), 10))
         self.__launchCallbackServer("/genomeperformance/" + genomeID)
         postData = {"genomeId": genomeID,
                     "callbackUrl": FitnessServer.geneticServerUrl + "/genomeperformance/" + genomeID,
                     "runCount": FitnessServer.genomeRunCount,
                     "genome": genome.tolist()}
-        requests.post(trainingServerUrl + "/startwithgenome", json=postData)
+        requests.post(trainingServerUrl + "/newJob", json=postData)
         return genomeID
 
     def evaluateGenomes(self, individuals, callback):
