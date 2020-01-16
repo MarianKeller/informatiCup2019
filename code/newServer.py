@@ -27,7 +27,8 @@ if os.name == 'posix':
 elif os.name == 'nt':
     gameFilePath = "ic20/ic20_windows"
 
-class job(object):
+
+class Job(object):
     def __init__(self, genomeId, genome, pendingRuns, callbackURL):
         self.genomeId = genomeId
         self.genome = genome
@@ -68,7 +69,8 @@ class PlayerServer(object):
                 if consoleOutput:
                     print(self.genomeId, " from trainer: ",
                           game.getOutcome(), " round: ", game.getRound())
-                self.myTrainer.collectGameResult(self, self.myJob, game.getOutcome(), game.getRound())
+                self.myTrainer.collectGameResult(
+                    self, self.myJob, game.getOutcome(), game.getRound())
             else:
                 if consoleOutput:
                     print(game.getOutcome(), " round: ", game.getRound())
@@ -85,34 +87,33 @@ class trainingServer(object):
         for i in range(0, maxPlayerServerCount):
             self.availablePlayerServers.append(PlayerServer(trainer=self))
 
-    
     def newJob(self):
         params = request.json
-
+        print(params)
         # parse request
         genomeId = params["genomeId"]
         callbackUrl = params["callbackUrl"]
         runCount = params["runCount"]
         genome = np.array(params["genome"])
 
-        self.jobList.append(job(genomeId, genome, runCount, callbackURL))
+        self.jobList.append(Job(genomeId, genome, runCount, callbackUrl))
         self.__manager()
-    
 
     def __manager(self):
-        if len(jobList) <= 0 or len(availablePlayerServers) <= 0:
+        if len(self.jobList) <= 0 or len(self.availablePlayerServers) <= 0:
             return 0
-        for i in span(0, len(availablePlayerServers)):
+        for i in range(0, len(self.availablePlayerServers)):
             job = self.jobList[0]
             player = self.availablePlayerServers.pop()
             self.busyPlayerServers.append(player)
 
             player.assignJob(job)
 
-            path = "/" + job.genomeId + job.pendingRuns
+            path = "/" + job.genomeId + str(job.pendingRuns)
             self.bottleInstance.route(path, "POST", player.gamePlayer)
 
-            subprocess.Popen([gameFilePath, "-u", trainingServerUrl + path, "-t 0"])
+            subprocess.Popen(
+                [gameFilePath, "-u", trainingServerUrl + path, "-t 0"])
 
             job.pendingRuns = job.pendingRuns - 1
 
@@ -121,26 +122,30 @@ class trainingServer(object):
         self.busyPlayerServers.remove(player)
 
         job.results.append([result, rounds])
-        
-        if job.pendingRuns <= 0:
-            thread = threading.Thread(target=self.__returnJobResults, args=(job.genomeId, job.gameResults, job.callbackUrl))
-            del job
-            
-        self.__manager()
 
+        if job.pendingRuns <= 0:
+            thread = threading.Thread(target=self.__returnJobResults, args=(
+                job.genomeId, job.gameResults, job.callbackUrl))
+            del job
+
+        self.__manager()
 
     def __returnJobResults(self, genomeId, gameResults, callbackUrl):
         jsonGameResults = {"genomeId": genomeId,
                            "gameResults": gameResults}
         requests.post(callbackURL, json=jsonGameResults)
 
-
+    def test(self):
+        return "Hi! This is test!"
 
 
 def launchTrainingServer(serverIp, serverPort):
     trainingApp = bottle.Bottle()
+    
     ts = trainingServer(trainingApp)
+    trainingApp.route("/newjob", "POST", ts.newJob)
+    trainingApp.route("/test", "POST",ts.test)
     trainingApp.run(host=serverIp, port=serverPort, quiet=True)
-    trainingApp.route("/newJob", "POST", ts.newJob)
+
 
 launchTrainingServer(trainingServerIp, trainingServerPort)
