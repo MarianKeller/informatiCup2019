@@ -14,7 +14,7 @@ import preprocessor as pre
 from gameWrapper import GameWrapper
 
 trainingMode = True
-consoleOutput = True
+consoleOutput = False
 
 maxPlayerServerCount = 20
 
@@ -89,31 +89,36 @@ class trainingServer(object):
 
     def newJob(self):
         params = request.json
-        
+
         # parse request
         genomeId = params["genomeId"]
         callbackUrl = params["callbackUrl"]
         runCount = params["runCount"]
         genome = np.array(params["genome"])
 
+        print("Job created: ", genomeId, " ", str(runCount)) #TODO: remove debug output
+
         self.jobList.append(Job(genomeId, genome, runCount, callbackUrl))
         self.__manager()
 
     def __manager(self):
-        while len(self.jobList) <= 0 and len(self.availablePlayerServers) <= 0:
-            job = self.jobList[0]
-            player = self.availablePlayerServers.pop()
-            self.busyPlayerServers.append(player)
+        print("__manager started")
+        for job in self.jobList:
+            while len(self.availablePlayerServers) > 0 and job.pendingRuns > 0:
+                player = self.availablePlayerServers.pop()
+                self.busyPlayerServers.append(player)
 
-            player.assignJob(job)
+                player.assignJob(job)
 
-            path = "/" + job.genomeId + str(job.pendingRuns)
-            self.bottleInstance.route(path, "POST", player.gamePlayer)
+                print("__manager assignment: ", "job: ", job.genomeId, "pendingRuns: ", str(job.pendingRuns), "server: ", player.genomeId)
+                
+                path = "/" + job.genomeId + str(job.pendingRuns)
+                self.bottleInstance.route(path, "POST", player.gamePlayer)
 
-            subprocess.Popen(
-                [gameFilePath, "-u", trainingServerUrl + path, "-t", "1000"])
+                subprocess.Popen(
+                    [gameFilePath, "-u", trainingServerUrl + path, "-t", "0", "-o", "logs/log.txt"])
 
-            job.pendingRuns = job.pendingRuns - 1
+                job.pendingRuns = job.pendingRuns - 1
 
     def collectGameResult(self, player, job, result, rounds):
         self.availablePlayerServers.append(player)
