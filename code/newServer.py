@@ -24,8 +24,10 @@ trainingServerUrl = "http://localhost:" + str(trainingServerPort)
 
 if os.name == 'posix':
     gameFilePath = "ic20/ic20_linux"
+    nullFile = "/dev/null"
 elif os.name == 'nt':
     gameFilePath = "ic20/ic20_windows"
+    nullFile = "./nul"
 
 
 class Job:
@@ -107,20 +109,20 @@ class trainingServer:
 
     def __manager(self):
         while self.jobList and len(self.availablePlayerServers) > 0:
-                player = self.availablePlayerServers.pop()
-                self.busyPlayerServers.append(player)
+            player = self.availablePlayerServers.pop()
+            self.busyPlayerServers.append(player)
 
-                job = self.jobList.pop()
-                player.assignJob(job)
+            job = self.jobList.pop()
+            player.assignJob(job)
 
-                for _ in range(job.runsMax):
-                    print("__manager assignment: ", "job: ", job.genomeId, "run number: ", str(
-                        job.runsStarted + 1), "server: ", player.genomeId)
-                    path = "/" + job.genomeId + str(job.runsStarted)
-                    self.bottleInstance.route(path, "POST", player.gamePlayer)
-                    subprocess.Popen(
-                        [gameFilePath, "-u", trainingServerUrl + path, "-t", "0", "-o", "logs/log.txt"])
-                    job.runsStarted += 1
+            for _ in range(job.runsMax):
+                print("__manager assignment: ", "job: ", job.genomeId, "run number: ", str(
+                    job.runsStarted + 1), "server: ", player.genomeId)
+                path = "/" + job.genomeId + str(job.runsStarted)
+                self.bottleInstance.route(path, "POST", player.gamePlayer)
+                subprocess.Popen(
+                    [gameFilePath, "-u", trainingServerUrl + path, "-t", "0", "-o", nullFile])
+                job.runsStarted += 1
 
     def collectGameResult(self, player, job, result, rounds):
         job.runsFinished += 1
