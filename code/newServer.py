@@ -57,28 +57,15 @@ class PlayerServer:
     def gamePlayer(self):
         gameDict = request.json
         game = GameWrapper(gameDict)
-        if consoleOutput:
+        if self.hasTrainer:
             print(f'round: {game.getRound()}, outcome: {game.getOutcome()}')
         if game.getOutcome() == 'pending':
             action = actor.action(
                 game, self.genome, doManualOptimizations=(not self.hasTrainer))
-            if consoleOutput:
-                print("numPossibleActions:", actor.numPossibleActions,
-                      "inputVectorSize:", pre.inputVectorSize)
-                pendingRuns = self.myJob.runsMax - self.myJob.runsFinished
-                print(self.genomeId, str(pendingRuns),
-                      "action:", action, "\n")
             return action
-        else:
-            if self.hasTrainer:
-                if consoleOutput:
-                    print(self.genomeId, "from trainer:",
-                          game.getOutcome(), "round:", game.getRound())
-                self.myTrainer.collectGameResult(
-                    self, self.myJob, game.getOutcome(), game.getRound())
-            else:
-                if consoleOutput:
-                    print(game.getOutcome(), "round:", game.getRound())
+        elif self.hasTrainer:
+            self.myTrainer.collectGameResult(
+                self, self.myJob, game.getOutcome(), game.getRound())
         return ""
 
 

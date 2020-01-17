@@ -151,32 +151,41 @@ class Population:
         self.__evaluateGeneration(callback=self.__cleanup)
 
 
+def savePopulation(p):
+    gen = p.generation
+    lastGenList = [
+        {"genome": individual.genome.tolist(),
+         "fitness": individual.fitness}
+        for individual in p.lastGeneration
+    ]
+    if not os.path.exists(genPath):
+        os.makedirs(genPath)
+    with jsonlines.open(genPath + "gen" + str(gen) + ".jsonl", mode="w") as writer:
+        for individual in lastGenList:
+            writer.write(individual)
+
+
+def printStats(p):
+    gen = p.generation
+    fitnesses = [individual.fitness for individual in p.lastGeneration]
+    minFitness = min(fitnesses)
+    maxFitness = max(fitnesses)
+    avgFitness = np.average(fitnesses)
+    stdFitness = np.std(fitnesses)
+    print('gen:', str(gen) + ',', 'min:', str(minFitness) + ',', 'max:', str(maxFitness) +
+          ',', 'average:', str(avgFitness) + ',', 'standard deviation:', str(stdFitness))
+
+
 def startEvolution():
     fs = FitnessServer()
-    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=100,
+    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=10,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
                    elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
     for i in range(100):
         if p.lastGeneration:
-            gen = p.generation
-            fitnesses = [individual.fitness for individual in p.lastGeneration]
-            minFitness = min(fitnesses)
-            maxFitness = max(fitnesses)
-            avgFitness = np.average(fitnesses)
-            stdFitness = np.std(fitnesses)
-            lastGenList = [
-                {"genome": individual.genome.tolist(),
-                 "fitness": individual.fitness}
-                for individual in p.lastGeneration
-            ]
-            if not os.path.exists(genPath):
-                os.makedirs(genPath)
-            with jsonlines.open(genPath + "gen" + str(gen) + ".jsonl", mode="w") as writer:
-                for individual in lastGenList:
-                    writer.write(individual)
-            print('gen:', str(gen) + ',', 'min:', str(minFitness) + ',', 'max:', str(maxFitness) + ',',
-                  'average:', str(avgFitness) + ',', 'standard deviation:', str(stdFitness))
+            savePopulation(p)
+            printStats(p)
         p.evolve()
 
 

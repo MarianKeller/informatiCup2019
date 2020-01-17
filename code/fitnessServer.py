@@ -21,7 +21,7 @@ class FitnessServer():
     geneticServerUrl = "http://localhost:50122"
     geneticServerIP = "0.0.0.0"
 
-    genomeRunCount = 20
+    genomeRunCount = 10
 
     def __init__(self):
         self.__fitnessDict = {}
@@ -68,7 +68,7 @@ class FitnessServer():
                     "callbackUrl": FitnessServer.geneticServerUrl + "/genomeperformance/" + genomeID,
                     "runCount": FitnessServer.genomeRunCount,
                     "genome": genome.tolist()}
-        print(requests.post(trainingServerUrl + "/newjob", json=postData))
+        requests.post(trainingServerUrl + "/newjob", json=postData)
         return genomeID
 
     def evaluateGenomes(self, individuals, callback):
