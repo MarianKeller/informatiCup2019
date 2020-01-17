@@ -16,7 +16,7 @@ from gameWrapper import GameWrapper
 trainingMode = True
 consoleOutput = False
 
-maxPlayerServerCount = 20
+maxPlayerServerCount = 10
 
 trainingServerPort = 50124
 trainingServerIp = "0.0.0.0"
@@ -57,7 +57,7 @@ class PlayerServer:
     def gamePlayer(self):
         gameDict = request.json
         game = GameWrapper(gameDict)
-        if self.hasTrainer:
+        if not self.hasTrainer:
             print(f'round: {game.getRound()}, outcome: {game.getOutcome()}')
         if game.getOutcome() == 'pending':
             action = actor.action(
