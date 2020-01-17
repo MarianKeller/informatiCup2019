@@ -112,14 +112,13 @@ class Population:
         self.generation = 0
         self.activePopulation = activePopulation
         self.lastGeneration = None
-        self.canEvolve = threading.Lock()
+        self.evolutionLock = threading.Lock()
 
     def __cleanup(self):
-        print("hi")
         self.lastGeneration = deepcopy(self.activePopulation)
         self.lastGeneration.sort(key=lambda x: x.fitness, reverse=True)
         self.generation += 1
-        self.canEvolve.release()
+        self.evolutionLock.release()
 
     def __evaluateGeneration(self, callback):
         self.fitnessFunction(self.activePopulation, callback)
@@ -143,7 +142,7 @@ class Population:
         self.activePopulation = newGeneration
 
     def evolve(self):
-        self.canEvolve.acquire()
+        self.evolutionLock.acquire()
         if self.activePopulation is None:
             self.activePopulation = Population.__createPopulation(
                 self.populationSize, self.lowerLimit, self.upperLimit, self.shape)
@@ -154,7 +153,7 @@ class Population:
 
 def startEvolution():
     fs = FitnessServer()
-    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=1,
+    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=100,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
                    elitism=True, mutationRate=0.01, selectionPressure=0.5)
 

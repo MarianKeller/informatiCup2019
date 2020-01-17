@@ -76,7 +76,7 @@ class FitnessServer():
         self.__individuals = [
             individual for individual in individuals if individual.fitness is None]
         self.__pendingCalculations = len(self.__individuals)
-        if len(self.__individuals) == 0:
+        if self.__pendingCalculations == 0:
             self.__cleanup()
         for i in range(len(self.__individuals)):
             individual = self.__individuals[i]
