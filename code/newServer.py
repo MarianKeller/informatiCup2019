@@ -28,16 +28,18 @@ elif os.name == 'nt':
     gameFilePath = "ic20/ic20_windows"
 
 
-class Job(object):
-    def __init__(self, genomeId, genome, pendingRuns, callbackURL):
+class Job:
+    def __init__(self, genomeId, genome, runsMax, callbackUrl):
         self.genomeId = genomeId
         self.genome = genome
-        self.pendingRuns = pendingRuns
-        self.callbackURL = callbackURL
+        self.runsMax = runsMax
+        self.runsStarted = 0
+        self.runsFinished = 0
+        self.callbackUrl = callbackUrl
         self.results = []
 
 
-class PlayerServer(object):
+class PlayerServer:
     def __init__(self, id="game1", trainer=None, genome=None, job=None):
         self.hasTrainer = (trainer is not None)
         self.myTrainer = trainer
@@ -55,29 +57,30 @@ class PlayerServer(object):
         game = GameWrapper(gameDict)
         if consoleOutput:
             print(f'round: {game.getRound()}, outcome: {game.getOutcome()}')
-        if(game.getOutcome() == 'pending'):
+        if game.getOutcome() == 'pending':
             action = actor.action(
                 game, self.genome, doManualOptimizations=(not self.hasTrainer))
             if consoleOutput:
-                print("numPossibleActions: ", actor.numPossibleActions,
-                      "inputVectorSize: ", pre.inputVectorSize)
-                print(self.genomeId, str(self.myJob.pendingRuns),
-                      " action:", action, "\n")
+                print("numPossibleActions:", actor.numPossibleActions,
+                      "inputVectorSize:", pre.inputVectorSize)
+                pendingRuns = self.myJob.runsMax - self.myJob.runsFinished
+                print(self.genomeId, str(pendingRuns),
+                      "action:", action, "\n")
             return action
         else:
             if self.hasTrainer:
                 if consoleOutput:
-                    print(self.genomeId, " from trainer: ",
-                          game.getOutcome(), " round: ", game.getRound())
+                    print(self.genomeId, "from trainer:",
+                          game.getOutcome(), "round:", game.getRound())
                 self.myTrainer.collectGameResult(
                     self, self.myJob, game.getOutcome(), game.getRound())
             else:
                 if consoleOutput:
-                    print(game.getOutcome(), " round: ", game.getRound())
+                    print(game.getOutcome(), "round:", game.getRound())
         return ""
 
 
-class trainingServer(object):
+class trainingServer:
     def __init__(self, bottleInstance):
         self.bottleInstance = bottleInstance
         self.jobList = []
@@ -96,59 +99,55 @@ class trainingServer(object):
         runCount = params["runCount"]
         genome = np.array(params["genome"])
 
-        print("Job created: ", genomeId, " ", str(runCount)) #TODO: remove debug output
+        print("Job created: ", genomeId, " ", str(
+            runCount))  # TODO: remove debug output
 
         self.jobList.append(Job(genomeId, genome, runCount, callbackUrl))
         self.__manager()
 
     def __manager(self):
-        print("__manager started")
-        for job in self.jobList:
-            while len(self.availablePlayerServers) > 0 and job.pendingRuns > 0:
+        while self.jobList and len(self.availablePlayerServers) > 0:
                 player = self.availablePlayerServers.pop()
                 self.busyPlayerServers.append(player)
 
+                job = self.jobList.pop()
                 player.assignJob(job)
 
-                print("__manager assignment: ", "job: ", job.genomeId, "pendingRuns: ", str(job.pendingRuns), "server: ", player.genomeId)
-                
-                path = "/" + job.genomeId + str(job.pendingRuns)
-                self.bottleInstance.route(path, "POST", player.gamePlayer)
-
-                subprocess.Popen(
-                    [gameFilePath, "-u", trainingServerUrl + path, "-t", "0", "-o", "logs/log.txt"])
-
-                job.pendingRuns = job.pendingRuns - 1
+                for _ in range(job.runsMax):
+                    print("__manager assignment: ", "job: ", job.genomeId, "run number: ", str(
+                        job.runsStarted + 1), "server: ", player.genomeId)
+                    path = "/" + job.genomeId + str(job.runsStarted)
+                    self.bottleInstance.route(path, "POST", player.gamePlayer)
+                    subprocess.Popen(
+                        [gameFilePath, "-u", trainingServerUrl + path, "-t", "0", "-o", "logs/log.txt"])
+                    job.runsStarted += 1
 
     def collectGameResult(self, player, job, result, rounds):
-        self.availablePlayerServers.append(player)
-        self.busyPlayerServers.remove(player)
-
-        job.results.append([result, rounds])
-
-        if job.pendingRuns <= 0:
+        job.runsFinished += 1
+        job.results.append((result, rounds))
+        if job.runsFinished == job.runsMax:
+            self.busyPlayerServers.remove(player)
+            self.availablePlayerServers.append(player)
             thread = threading.Thread(target=self.__returnJobResults, args=(
-                job.genomeId, job.gameResults, job.callbackUrl))
-            del job
+                job.genomeId, job.results, job.callbackUrl))
+            thread.start()
 
         self.__manager()
 
     def __returnJobResults(self, genomeId, gameResults, callbackUrl):
         jsonGameResults = {"genomeId": genomeId,
                            "gameResults": gameResults}
-        requests.post(callbackURL, json=jsonGameResults)
-
-    def test(self):
-        return "Hi! This is test!"
+        requests.post(callbackUrl, json=jsonGameResults)
 
 
 def launchTrainingServer(serverIp, serverPort):
     trainingApp = bottle.Bottle()
-    
+
     ts = trainingServer(trainingApp)
     trainingApp.route("/newjob", "POST", ts.newJob)
-    trainingApp.route("/test", "POST",ts.test)
-    trainingApp.run(host=serverIp, port=serverPort, quiet=True)
+    BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
+    trainingApp.run(host=serverIp, port=serverPort,
+                    quiet=True, server='tornado')
 
 
 launchTrainingServer(trainingServerIp, trainingServerPort)

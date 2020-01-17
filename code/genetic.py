@@ -112,16 +112,16 @@ class Population:
         self.generation = 0
         self.activePopulation = activePopulation
         self.lastGeneration = None
-        self.canEvolve = True
+        self.canEvolve = threading.Lock()
 
     def __cleanup(self):
+        print("hi")
         self.lastGeneration = deepcopy(self.activePopulation)
         self.lastGeneration.sort(key=lambda x: x.fitness, reverse=True)
         self.generation += 1
-        self.canEvolve = True
+        self.canEvolve.release()
 
     def __evaluateGeneration(self, callback):
-        self.canEvolve = False
         self.fitnessFunction(self.activePopulation, callback)
 
     def __applyGeneticOperators(self):
@@ -143,8 +143,7 @@ class Population:
         self.activePopulation = newGeneration
 
     def evolve(self):
-        while not self.canEvolve:
-            sleep(0.5)
+        self.canEvolve.acquire()
         if self.activePopulation is None:
             self.activePopulation = Population.__createPopulation(
                 self.populationSize, self.lowerLimit, self.upperLimit, self.shape)
@@ -155,14 +154,11 @@ class Population:
 
 def startEvolution():
     fs = FitnessServer()
-    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=30,
+    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=1,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
                    elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
     for i in range(100):
-        while not p.canEvolve:
-            sleep(0.5)
-        p.evolve()
         if p.lastGeneration:
             gen = p.generation
             fitnesses = [individual.fitness for individual in p.lastGeneration]
@@ -182,6 +178,7 @@ def startEvolution():
                     writer.write(individual)
             print('gen:', str(gen) + ',', 'min:', str(minFitness) + ',', 'max:', str(maxFitness) + ',',
                   'average:', str(avgFitness) + ',', 'standard deviation:', str(stdFitness))
+        p.evolve()
 
 
 @post("/main")
@@ -193,4 +190,4 @@ def main():
 
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 run(host=FitnessServer.geneticServerIP,
-    port=FitnessServer.geneticServerPort, quiet=True, server='tornado')
+    port=FitnessServer.geneticServerPort, quiet=True)

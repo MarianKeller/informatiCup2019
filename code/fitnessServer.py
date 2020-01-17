@@ -21,24 +21,34 @@ class FitnessServer():
     geneticServerUrl = "http://localhost:50122"
     geneticServerIP = "0.0.0.0"
 
-    genomeRunCount = 14
+    genomeRunCount = 1
 
     def __init__(self):
         self.__fitnessDict = {}
         self.__callback = None
+        self.__individuals = []
         self.__pendingCalculations = 0
+
+    def __cleanup(self):
+        callback = self.__callback
+        self.__fitnessDict = {}
+        self.__callback = None
+        self.__individuals = []
+        self.__pendingCalculations = 0
+        callback()
 
     def __computedResult(self):
         if self.__pendingCalculations == 0:
             for individual in self.__individuals:
                 individual.fitness = self.__fitnessDict[individual.ID]
-            self.__callback()
+            self.__cleanup()
+            
 
     def __computeFitness(self):
         params = request.json
         genomeID = params["genomeId"]
         fitnessVec = []
-        for [genomeNr, result, rounds] in params["gameResults"]:
+        for result, rounds in params["gameResults"]:
             win = int(result == "win")
             def phi(x): return 1/(1+numpy.log(x))
             fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
@@ -66,6 +76,8 @@ class FitnessServer():
         self.__individuals = [
             individual for individual in individuals if individual.fitness is None]
         self.__pendingCalculations = len(self.__individuals)
+        if len(self.__individuals) == 0:
+            self.__cleanup()
         for i in range(len(self.__individuals)):
             individual = self.__individuals[i]
             individual.ID = self.__evaluateGenome(individual.genome)
