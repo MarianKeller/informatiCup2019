@@ -168,6 +168,7 @@ def savePopulation(p):
 minFitnesses = []
 maxFitnesses = []
 avgFitnesses = []
+mdnFitnesses = []
 stdFitnesses = []
 
 
@@ -176,23 +177,27 @@ def updateStats(p):
     minFitnesses.append(min(fitnesses))
     maxFitnesses.append(max(fitnesses))
     avgFitnesses.append(np.average(fitnesses))
+    mdnFitnesses.append(np.median(fitnesses))
     stdFitnesses.append(np.std(fitnesses))
 
 
 def printStats(p):
     print('gen:', str(p.generation) + ',', 'min:', str(minFitnesses[-1]) + ',', 'max:', str(maxFitnesses[-1]) +
-          ',', 'average:', str(avgFitnesses[-1]) + ',', 'standard deviation:', str(stdFitnesses[-1]))
+          ',', 'average:', str(avgFitnesses[-1]) + ',', 'median:', str(mdnFitnesses[-1]) + ',', 'standard deviation:', str(stdFitnesses[-1]))
 
 
 def plotGraph():
-    fig = plt.figure(num='fitness stats')
+    fig = plt.figure(num="fitness stats")
     ax = plt.axes()
     plt.xlim(1, 100)
     plt.ylim(0, 1)
     plt.title("fitness stats")
+    plt.xlabel("generation") 
+    plt.ylabel("fitness")
     minFitness, = plt.plot([], [], label="min")
     maxFitness, = plt.plot([], [], label="max")
     avgFitness, = plt.plot([], [], label="avg")
+    mdnFitness, = plt.plot([], [], label="mdn")
     stdFitness, = plt.plot([], [], label="std")
     plt.legend()
     while(True):
@@ -205,6 +210,8 @@ def plotGraph():
         maxFitness.set_ydata(maxFitnesses)
         avgFitness.set_xdata(range(len(avgFitnesses)))
         avgFitness.set_ydata(avgFitnesses)
+        mdnFitness.set_xdata(range(len(mdnFitnesses)))
+        mdnFitness.set_ydata(mdnFitnesses)
         stdFitness.set_xdata(range(len(stdFitnesses)))
         stdFitness.set_ydata(stdFitnesses)
         ax.relim()
