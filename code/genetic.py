@@ -9,10 +9,11 @@ from threading import Thread
 from time import sleep
 from typing import Callable, Dict, List, Tuple
 
+import jsonlines
+import matplotlib.pyplot as plt
 import numpy as np
 from bottle import BaseRequest, post, request, route, run
 
-import jsonlines
 from fitnessServer import FitnessServer
 from individual import Individual
 from postprocessor import numPossibleActions
@@ -152,7 +153,6 @@ class Population:
 
 
 def savePopulation(p):
-    gen = p.generation
     lastGenList = [
         {"genome": individual.genome.tolist(),
          "fitness": individual.fitness}
@@ -160,31 +160,68 @@ def savePopulation(p):
     ]
     if not os.path.exists(genPath):
         os.makedirs(genPath)
-    with jsonlines.open(genPath + "gen" + str(gen) + ".jsonl", mode="w") as writer:
+    with jsonlines.open(genPath + "gen" + str(p.generation) + ".jsonl", mode="w") as writer:
         for individual in lastGenList:
             writer.write(individual)
 
 
-def printStats(p):
-    gen = p.generation
+minFitnesses = []
+maxFitnesses = []
+avgFitnesses = []
+stdFitnesses = []
+
+
+def updateStats(p):
     fitnesses = [individual.fitness for individual in p.lastGeneration]
-    minFitness = min(fitnesses)
-    maxFitness = max(fitnesses)
-    avgFitness = np.average(fitnesses)
-    stdFitness = np.std(fitnesses)
-    print('gen:', str(gen) + ',', 'min:', str(minFitness) + ',', 'max:', str(maxFitness) +
-          ',', 'average:', str(avgFitness) + ',', 'standard deviation:', str(stdFitness))
+    minFitnesses.append(min(fitnesses))
+    maxFitnesses.append(max(fitnesses))
+    avgFitnesses.append(np.average(fitnesses))
+    stdFitnesses.append(np.std(fitnesses))
+
+
+def printStats(p):
+    print('gen:', str(p.generation) + ',', 'min:', str(minFitnesses[-1]) + ',', 'max:', str(maxFitnesses[-1]) +
+          ',', 'average:', str(avgFitnesses[-1]) + ',', 'standard deviation:', str(stdFitnesses[-1]))
+
+
+def plotGraph():
+    fig = plt.figure(num='fitness stats')
+    ax = plt.axes()
+    plt.xlim(1, 100)
+    plt.ylim(0, 1)
+    plt.title("fitness stats")
+    minFitness, = plt.plot([], [], label="minFitness")
+    maxFitness, = plt.plot([], [], label="maxFitness")
+    avgFitness, = plt.plot([], [], label="avgFitness")
+    stdFitness, = plt.plot([], [], label="stdFitness")
+    plt.legend()
+    while(True):
+        minFitness.set_xdata(range(len(minFitnesses))[-100:])
+        minFitness.set_ydata(minFitnesses[-100:])
+        maxFitness.set_xdata(range(len(maxFitnesses))[-100:])
+        maxFitness.set_ydata(maxFitnesses[-100:])
+        avgFitness.set_xdata(range(len(avgFitnesses))[-100:])
+        avgFitness.set_ydata(avgFitnesses[-100:])
+        stdFitness.set_xdata(range(len(stdFitnesses))[-100:])
+        stdFitness.set_ydata(stdFitnesses[-100:])
+        ax.relim()
+        ax.autoscale_view()
+        plt.draw()
+        plt.pause(0.1)
 
 
 def startEvolution():
+    plotThread = threading.Thread(target=plotGraph)
+    plotThread.start()
     fs = FitnessServer()
-    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=100,
+    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=2,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
                    elitism=True, mutationRate=0.01, selectionPressure=0.5)
 
     for _ in range(1000):
         if p.lastGeneration:
             savePopulation(p)
+            updateStats(p)
             printStats(p)
         # TODO force reevaluation of whole population every ~20 generations
         p.evolve()
