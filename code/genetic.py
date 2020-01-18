@@ -196,18 +196,21 @@ def plotGraph():
     stdFitness, = plt.plot([], [], label="stdFitness")
     plt.legend()
     while(True):
-        minFitness.set_xdata(range(len(minFitnesses))[-100:])
-        minFitness.set_ydata(minFitnesses[-100:])
-        maxFitness.set_xdata(range(len(maxFitnesses))[-100:])
-        maxFitness.set_ydata(maxFitnesses[-100:])
-        avgFitness.set_xdata(range(len(avgFitnesses))[-100:])
-        avgFitness.set_ydata(avgFitnesses[-100:])
-        stdFitness.set_xdata(range(len(stdFitnesses))[-100:])
-        stdFitness.set_ydata(stdFitnesses[-100:])
+        xlimMin = max(1, len(maxFitnesses) - 99)
+        xlimMax = xlimMin + 99
+        plt.xlim(xlimMin, xlimMax)
+        minFitness.set_xdata(range(len(minFitnesses)))
+        minFitness.set_ydata(minFitnesses)
+        maxFitness.set_xdata(range(len(maxFitnesses)))
+        maxFitness.set_ydata(maxFitnesses)
+        avgFitness.set_xdata(range(len(avgFitnesses)))
+        avgFitness.set_ydata(avgFitnesses)
+        stdFitness.set_xdata(range(len(stdFitnesses)))
+        stdFitness.set_ydata(stdFitnesses)
         ax.relim()
         ax.autoscale_view()
         plt.draw()
-        plt.pause(0.1)
+        plt.pause(10)
 
 
 def startEvolution():
