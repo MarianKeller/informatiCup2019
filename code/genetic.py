@@ -200,7 +200,7 @@ def plotGraph():
     mdnFitness, = plt.plot([], [], label="mdn")
     stdFitness, = plt.plot([], [], label="std")
     plt.legend()
-    while(True):
+    while True:
         xlimMin = max(1, len(maxFitnesses) - 99)
         xlimMax = xlimMin + 99
         plt.xlim(xlimMin, xlimMax)
