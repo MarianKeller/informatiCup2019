@@ -17,7 +17,7 @@ def hashBlake2(val, hSize=32):
     return h.hexdigest()
 
 class FitnessServer():
-    genomeRunCount = 1 # how many times one genome should be run
+    genomeRunCount = 20 # how many times one genome should be run
     maxPlayerCount = 20 # how many players should run in parallel at a time
 
     playerServerIp = "0.0.0.0"

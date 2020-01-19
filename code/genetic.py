@@ -223,16 +223,15 @@ def startEvolution():
     plotThread = threading.Thread(target=plotGraph)
     plotThread.start()
     fs = FitnessServer()
-    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=2,
+    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=100,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
-                   elitism=True, mutationRate=0.01, selectionPressure=0.5)
+                   elitism=True, mutationRate=0.025, selectionPressure=0.5)
 
     for _ in range(1000):
         if p.lastGeneration:
             savePopulation(p)
             updateStats(p)
             printStats(p)
-        # TODO force reevaluation of whole population every ~20 generations
         p.evolve()
 
 
