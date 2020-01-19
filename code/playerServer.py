@@ -5,7 +5,6 @@ import subprocess
 import threading
 import uuid
 
-import numpy as np
 import bottle
 from bottle import BaseRequest, post, request, route, run
 

@@ -87,8 +87,8 @@ class FitnessServer():
             print(str(e))
     
     def __getErrorMargin(self, sample):
-        mu = np.mean(sample)
-        sigma = np.std(sample)
+        mu = numpy.mean(sample)
+        sigma = numpy.std(sample)
         sigmaMean = sigma/(len(sample)**.5)
         confInt = stats.norm.interval(FitnessServer.fitnessConfidence, loc=mu, scale=sigmaMean)
         width = confInt[1] - confInt[0]
