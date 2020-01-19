@@ -51,7 +51,7 @@ class FitnessServer():
             schedule.run_pending()
             time.sleep(1)
 
-    watchdogTriggerCount = 1
+    watchdogTriggerCount = 15
     def __watchdog(self):
         try:
             for genomeId in self.__fitnessDict:
