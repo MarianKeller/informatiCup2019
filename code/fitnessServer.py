@@ -116,19 +116,17 @@ class FitnessServer():
     def __queueManager(self):
         if FitnessServer.maxPlayerCount > self.__currPlayerCount and len(self.__jobQueue) > 0:
             print("__queueManager starts jobs:")
-            for i in range(0, FitnessServer.maxPlayerCount - self.__currPlayerCount):
-                for job in self.__jobQueue:
-                    if FitnessServer.maxPlayerCount > self.__currPlayerCount and len(self.__jobQueue) > 0:
-                        player = PlayerServer(id=job, genome=self.__fitnessDict[job]["genome"], trainer=self)
-                        pid = player.launchGame()
-                        self.__currPlayerCount += 1
-                        self.__fitnessDict[job]["processList"][pid] = {}
-                        self.__fitnessDict[job]["processList"][pid]["watchDogCount"] = 0
-                        self.__fitnessDict[job]["processList"][pid]["player"] = player
-
-                        self.__jobQueue.remove(job)
-                    else:
-                        break
+            while len(self.__jobQueue) > 0:
+                if FitnessServer.maxPlayerCount > self.__currPlayerCount and len(self.__jobQueue) > 0:
+                    job = self.__jobQueue.pop()
+                    player = PlayerServer(id=job, genome=self.__fitnessDict[job]["genome"], trainer=self)
+                    pid = player.launchGame()
+                    self.__currPlayerCount += 1
+                    self.__fitnessDict[job]["processList"][pid] = {}
+                    self.__fitnessDict[job]["processList"][pid]["watchDogCount"] = 0
+                    self.__fitnessDict[job]["processList"][pid]["player"] = player
+                else:
+                    break
 
 
     def evaluateGenomes(self, individuals, callback):
