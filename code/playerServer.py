@@ -34,7 +34,7 @@ class PlayerServer:
     def launchGame(self):
         path = "/" + self.genomeId + self.uuid
         self.proc = subprocess.Popen(
-                    [gameFilePath, "-u", playerServerUrl + path, "-t", "0", "-o", nullFile])
+                    [gameFilePath, "-u", playerServerUrl + path, "-t", "1000", "-o", nullFile])
         route(path, "POST", self.gamePlayer)
         return self.proc
         
