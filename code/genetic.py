@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import glob
 import threading
 import time
 from collections import namedtuple
@@ -12,12 +13,14 @@ from typing import Callable, Dict, List, Tuple
 import jsonlines
 import matplotlib.pyplot as plt
 import numpy as np
-from bottle import BaseRequest, post, request, route, run
+import bottle
+from bottle import BaseRequest, post, request, route, run, Bottle
 
 from fitnessServer import FitnessServer
 from individual import Individual
 from postprocessor import numPossibleActions
 from preprocessor import inputVectorSize
+from playerServer import PlayerServer
 
 genPath = "gens/"
 
@@ -109,7 +112,6 @@ class Population:
         self.tournamentSize = tournamentSize
         self.mutationRate = mutationRate
         self.elitism = elitism
-        self.generation = 0
         self.activePopulation = activePopulation
         self.lastGeneration = None
         self.evolutionLock = threading.Lock()
@@ -117,7 +119,6 @@ class Population:
     def __cleanup(self):
         self.lastGeneration = deepcopy(self.activePopulation)
         self.lastGeneration.sort(key=lambda x: x.fitness, reverse=True)
-        self.generation += 1
         self.evolutionLock.release()
 
     def __evaluateGeneration(self, callback):
@@ -219,13 +220,49 @@ def plotGraph():
         plt.pause(10)
 
 
-def startEvolution():
+def getLatestGenome():
+    fileList = glob.glob(genPath + "/*.jsonl")
+    fileList.sort()
+    latestPopulationFile = fileList.pop()
+
+    with open(latestPopulationFile, 'r') as json_file:
+        json_list = list(json_file)
+    
+    jsonLine = json.loads(json_list[0])
+    genome = np.array(jsonLine.get("genome"))
+
+    return genome
+
+def getLatestPopulation():
+    fileList = glob.glob(genPath + "/*.jsonl")
+    fileList.sort()
+    latestPopulationFile = fileList.pop()
+
+    with open(latestPopulationFile, 'r') as json_file:
+        json_list = list(json_file)
+
+    activePopulation = []
+    for json_str in json_list:
+        result = json.loads(json_str)
+        genome = np.array(result.get("genome"))
+        fitness = result.get("fitness")
+        dude = Individual(genome=genome, fitness=fitness, ID=FitnessServer.getGenomeId(genome))
+        activePopulation.append(dude)
+    return activePopulation
+
+def startEvolution(startFromLastGenome=False):
     plotThread = threading.Thread(target=plotGraph)
     plotThread.start()
     fs = FitnessServer()
-    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=100,
+    if startFromLastGenome:
+        activePopulation = getLatestPopulation()
+        populationSize = len(activePopulation)
+    else:
+        activePopulation = None
+        populationSize = 100
+    p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=populationSize,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
-                   elitism=True, mutationRate=0.025, selectionPressure=0.5)
+                   elitism=True, mutationRate=0.025, selectionPressure=0.5, activePopulation=activePopulation)
 
     for _ in range(1000):
         if p.lastGeneration:
@@ -234,13 +271,25 @@ def startEvolution():
             printStats(p)
         p.evolve()
 
+def startGame():
+    genome = getLatestGenome()
+    pl = PlayerServer(genome=genome)
+    route("/play", "POST", pl.gamePlayer)
+
+
 
 @post("/main")
 def main():
-    thread = Thread(target=startEvolution)
+    incomingRequest = request.json
+    if "evolve" in incomingRequest:
+        if incomingRequest.get("startFromLast", False):
+            thread = Thread(target=startEvolution, args=(True,))
+        else:
+            thread = Thread(target=startEvolution, args=(False,))
+    elif "play" in incomingRequest:
+        thread = Thread(target=startGame)
     thread.start()
     return "main"
-
 
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 run(host=FitnessServer.playerServerIp,

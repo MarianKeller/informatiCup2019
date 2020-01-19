@@ -1,5 +1,5 @@
 class Individual:
-    def __init__(self, genome):
+    def __init__(self, genome, fitness=None, ID=None):
         self.genome = genome
-        self.fitness = None
-        self.ID = None
+        self.fitness = fitness
+        self.ID = ID

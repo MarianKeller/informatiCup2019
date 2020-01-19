@@ -4,7 +4,8 @@ from hashlib import blake2s
 import numpy
 
 import requests
-from bottle import BaseRequest, post, request, route, run
+import bottle
+from bottle import BaseRequest, post, request, route, run, Bottle
 
 import time
 import schedule
@@ -12,15 +13,16 @@ import threading
 
 from playerServer import PlayerServer
 
+
 def hashBlake2(val, hSize=32):
     h = blake2s(digest_size=hSize)
     h.update(val)
     return h.hexdigest()
 
-class FitnessServer():
-    genomeRunCount = 20 # how many times one genome should be run
-    maxPlayerCount = 20 # how many players should run in parallel at a time
 
+class FitnessServer():
+    genomeRunCount = 20  # how many times one genome should be run
+    maxPlayerCount = 20  # how many players should run in parallel at a time
 
     playerServerIp = "0.0.0.0"
     playerServerPort = 50122
@@ -40,12 +42,13 @@ class FitnessServer():
     def __cleanup(self):
         callback = self.__callback
 
-        self.__schedulerAbortEvent.set() # abort thread
+        self.__schedulerAbortEvent.set()  # abort thread
         self.__individuals = []
         self.__fitnessDict = {}
         self.__jobQueue = []
         self.__currPlayerCount = 0
         self.__callback = None
+
         callback()
 
     def __scheduler(self):
@@ -54,18 +57,21 @@ class FitnessServer():
             time.sleep(1)
 
     watchdogTriggerCount = 15
+
     def __watchdog(self):
         try:
             for genomeId in self.__fitnessDict:
                 for pid in self.__fitnessDict[genomeId]["processList"]:
                     timerCount = self.__fitnessDict[genomeId]["processList"][pid]["watchDogCount"]
                     if (timerCount >= FitnessServer.watchdogTriggerCount):
-                        print("Watchdog reset one Player for Genome:", str(genomeId))
+                        print("Watchdog reset one Player for Genome:",
+                              str(genomeId))
                         player = self.__fitnessDict[genomeId]["processList"][pid]["player"]
 
                         self.__currPlayerCount -= 1
                         del player
-                        self.__fitnessDict[genomeId]["processList"].pop(pid, None)
+                        self.__fitnessDict[genomeId]["processList"].pop(
+                            pid, None)
 
                         pid.kill()
                         del pid
@@ -78,12 +84,13 @@ class FitnessServer():
         except Exception as e:
             print("Error in __watchdog")
             print(str(e))
-    
+
     def __getErrorMargin(self, sample):
         mu = numpy.mean(sample)
         sigma = numpy.std(sample)
         sigmaMean = sigma/(len(sample)**.5)
-        confInt = stats.norm.interval(FitnessServer.fitnessConfidence, loc=mu, scale=sigmaMean)
+        confInt = stats.norm.interval(
+            FitnessServer.fitnessConfidence, loc=mu, scale=sigmaMean)
         width = confInt[1] - confInt[0]
         return width
 
@@ -93,13 +100,13 @@ class FitnessServer():
     def __computedResult(self):
         incompleteCounter = 0
         for individual in self.__individuals:
-                if self.__fitnessDict[individual.ID]["medianFitness"] >= 0:
-                    individual.fitness = self.__fitnessDict[individual.ID]["medianFitness"]
-                else:
-                    incompleteCounter += 1
+            if self.__fitnessDict[individual.ID]["medianFitness"] >= 0:
+                individual.fitness = self.__fitnessDict[individual.ID]["medianFitness"]
+            else:
+                incompleteCounter += 1
         if incompleteCounter == 0:
             self.__cleanup()
-            
+
     def collectGameResult(self, playerServer, genomeId, result, rounds, pid):
         if genomeId in self.__fitnessDict:
             win = int(result == "win")
@@ -107,24 +114,30 @@ class FitnessServer():
             fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
             self.__fitnessDict[genomeId]["results"].append(fitness)
             print("result collected: ", genomeId, ": fitness = ", str(fitness))
-            
+
             self.__currPlayerCount -= 1
             self.__fitnessDict[genomeId]["processList"].pop(pid, None)
-            
+
             if len(self.__fitnessDict[genomeId]["results"]) >= self.__fitnessDict[genomeId]["runCount"]:
-                self.__fitnessDict[genomeId]["medianFitness"] = numpy.median(self.__fitnessDict[genomeId]["results"])
+                self.__fitnessDict[genomeId]["medianFitness"] = numpy.median(
+                    self.__fitnessDict[genomeId]["results"])
                 self.__computedResult()
             pid.kill()
             del pid
             del playerServer
 
+
+    @staticmethod
+    def getGenomeId(genome):
+        return str(hashBlake2(genome.tostring(), 10))    
+
     def __evaluateGenome(self, genome):
         genomeId = str(hashBlake2(genome.tostring(), 10))
         self.__fitnessDict[genomeId] = {"genome": genome,
-                                      "runCount": FitnessServer.genomeRunCount,
-                                      "medianFitness": -1,
-                                      "results": [],
-                                      "processList": {}}
+                                        "runCount": FitnessServer.genomeRunCount,
+                                        "medianFitness": -1,
+                                        "results": [],
+                                        "processList": {}}
         for i in range(0, FitnessServer.genomeRunCount):
             self.__addJob(genomeId)
 
@@ -138,13 +151,13 @@ class FitnessServer():
             print("__queueManager starts jobs:")
             while len(self.__jobQueue) > 0 and FitnessServer.maxPlayerCount > self.__currPlayerCount and len(self.__jobQueue) > 0:
                 job = self.__jobQueue.pop()
-                player = PlayerServer(id=job, genome=self.__fitnessDict[job]["genome"], trainer=self)
+                player = PlayerServer(
+                    id=job, genome=self.__fitnessDict[job]["genome"], trainer=self)
                 pid = player.launchGame()
                 self.__currPlayerCount += 1
                 self.__fitnessDict[job]["processList"][pid] = {}
                 self.__fitnessDict[job]["processList"][pid]["watchDogCount"] = 0
                 self.__fitnessDict[job]["processList"][pid]["player"] = player
-
 
     def evaluateGenomes(self, individuals, callback):
         self.__schedulerAbortEvent = threading.Event()

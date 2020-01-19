@@ -21,8 +21,9 @@ elif os.name == 'nt':
 
 playerServerUrl = "http://localhost:50122"
 
+
 class PlayerServer:
-    def __init__(self, id="game1", trainer=None, genome=None):
+    def __init__(self, id="play", trainer=None, genome=None):
         self.hasTrainer = (trainer is not None)
         self.myTrainer = trainer
         self.genomeId = id
@@ -33,10 +34,9 @@ class PlayerServer:
     def launchGame(self):
         path = "/" + self.genomeId + self.uuid
         self.proc = subprocess.Popen(
-                    [gameFilePath, "-u", playerServerUrl + path, "-t", "1000", "-o", nullFile])
+            [gameFilePath, "-u", playerServerUrl + path, "-t", "1000", "-o", nullFile])
         route(path, "POST", self.gamePlayer)
         return self.proc
-        
 
     def gamePlayer(self):
         gameDict = request.json
