@@ -86,7 +86,7 @@ class FitnessServer():
             print("Error in __watchdog")
             print(str(e))
     
-    def __getErrorMargin(sample):
+    def __getErrorMargin(self, sample):
         mu = np.mean(sample)
         sigma = np.std(sample)
         sigmaMean = sigma/(len(sample)**.5)
@@ -94,7 +94,7 @@ class FitnessServer():
         width = confInt[1] - confInt[0]
         return width
 
-    def needLargerSampleSize(sample):
+    def needLargerSampleSize(self, sample):
         return getErrorMargin(sample) > FitnessServer.fitnessAllowedError
 
     def __computedResult(self):
