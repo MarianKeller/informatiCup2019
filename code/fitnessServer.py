@@ -2,6 +2,9 @@ import json
 from hashlib import blake2s
 
 import numpy
+
+from scipy import stats
+
 import requests
 from bottle import BaseRequest, post, request, route, run
 
@@ -19,6 +22,12 @@ def hashBlake2(val, hSize=32):
 class FitnessServer():
     genomeRunCount = 20 # how many times one genome should be run
     maxPlayerCount = 20 # how many players should run in parallel at a time
+
+
+    fitnessConfidence = .8
+    fitnessallowedError = .05
+    runUntilConfident = True
+
 
     playerServerIp = "0.0.0.0"
     playerServerPort = 50122
@@ -59,14 +68,14 @@ class FitnessServer():
                     timerCount = self.__fitnessDict[genomeId]["processList"][pid]["watchDogCount"]
                     if (timerCount >= FitnessServer.watchdogTriggerCount):
                         print("Watchdog reset one Player for Genome:", str(genomeId))
-                        self.__currPlayerCount -= 1
-
                         player = self.__fitnessDict[genomeId]["processList"][pid]["player"]
+
                         self.__currPlayerCount -= 1
                         del player
                         self.__fitnessDict[genomeId]["processList"].pop(pid, None)
 
                         pid.kill()
+                        del pid
                         self.__addJob(genomeId)
 
                         break
@@ -76,6 +85,17 @@ class FitnessServer():
         except Exception as e:
             print("Error in __watchdog")
             print(str(e))
+    
+    def __getErrorMargin(sample):
+        mu = np.mean(sample)
+        sigma = np.std(sample)
+        sigmaMean = sigma/(len(sample)**.5)
+        confInt = stats.norm.interval(FitnessServer.fitnessConfidence, loc=mu, scale=sigmaMean)
+        width = confInt[1] - confInt[0]
+        return width
+
+    def needLargerSampleSize(sample):
+        return getErrorMargin(sample) > FitnessServer.fitnessAllowedError
 
     def __computedResult(self):
         incompleteCounter = 0
@@ -93,7 +113,13 @@ class FitnessServer():
             def phi(x): return 1/(1+numpy.log(x))
             fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
             self.__fitnessDict[genomeId]["results"].append(fitness)
-            print("result collected: ", genomeId, ": fitness = ", str(fitness))
+            errorMargin = self.__getErrorMargin(self.__fitnessDict[genomeId]["results"])
+            print("result collected: ", genomeId, ": fitness = ", str(fitness), " error = ", errorMargin)
+
+            if errorMargin > FitnessServer.fitnessAllowedError and runUntilConfident:
+                self.__fitnessDict[genomeId]["runCount"] += FitnessServer.genomeRunCount
+                for i in range(0, FitnessServer.genomeRunCount):
+                    self.__addJob(genomeId)
             
             self.__currPlayerCount -= 1
             self.__fitnessDict[genomeId]["processList"].pop(pid, None)
@@ -102,6 +128,7 @@ class FitnessServer():
                 self.__fitnessDict[genomeId]["medianFitness"] = numpy.median(self.__fitnessDict[genomeId]["results"])
                 self.__computedResult()
             pid.kill()
+            del pid
             del playerServer
 
     def __evaluateGenome(self, genome):
@@ -122,17 +149,14 @@ class FitnessServer():
     def __queueManager(self):
         if FitnessServer.maxPlayerCount > self.__currPlayerCount and len(self.__jobQueue) > 0:
             print("__queueManager starts jobs:")
-            while len(self.__jobQueue) > 0:
-                if FitnessServer.maxPlayerCount > self.__currPlayerCount and len(self.__jobQueue) > 0:
-                    job = self.__jobQueue.pop()
-                    player = PlayerServer(id=job, genome=self.__fitnessDict[job]["genome"], trainer=self)
-                    pid = player.launchGame()
-                    self.__currPlayerCount += 1
-                    self.__fitnessDict[job]["processList"][pid] = {}
-                    self.__fitnessDict[job]["processList"][pid]["watchDogCount"] = 0
-                    self.__fitnessDict[job]["processList"][pid]["player"] = player
-                else:
-                    break
+            while len(self.__jobQueue) > 0 and FitnessServer.maxPlayerCount > self.__currPlayerCount and len(self.__jobQueue) > 0:
+                job = self.__jobQueue.pop()
+                player = PlayerServer(id=job, genome=self.__fitnessDict[job]["genome"], trainer=self)
+                pid = player.launchGame()
+                self.__currPlayerCount += 1
+                self.__fitnessDict[job]["processList"][pid] = {}
+                self.__fitnessDict[job]["processList"][pid]["watchDogCount"] = 0
+                self.__fitnessDict[job]["processList"][pid]["player"] = player
 
 
     def evaluateGenomes(self, individuals, callback):
