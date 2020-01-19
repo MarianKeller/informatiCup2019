@@ -21,7 +21,6 @@ from preprocessor import inputVectorSize
 
 genPath = "gens/"
 
-
 class Population:
     @staticmethod
     def __createIndividual(lowerLimit, upperLimit, shape):
@@ -245,5 +244,5 @@ def main():
 
 
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
-run(host=FitnessServer.geneticServerIP,
-    port=FitnessServer.geneticServerPort, quiet=True)
+run(host=FitnessServer.playerServerIp,
+    port=FitnessServer.playerServerPort, quiet=True)
