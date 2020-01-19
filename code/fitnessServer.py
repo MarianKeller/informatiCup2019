@@ -3,8 +3,6 @@ from hashlib import blake2s
 
 import numpy
 
-from scipy import stats
-
 import requests
 from bottle import BaseRequest, post, request, route, run
 
@@ -22,11 +20,6 @@ def hashBlake2(val, hSize=32):
 class FitnessServer():
     genomeRunCount = 20 # how many times one genome should be run
     maxPlayerCount = 20 # how many players should run in parallel at a time
-
-
-    fitnessConfidence = .8
-    fitnessallowedError = .05
-    runUntilConfident = True
 
 
     playerServerIp = "0.0.0.0"
@@ -113,13 +106,7 @@ class FitnessServer():
             def phi(x): return 1/(1+numpy.log(x))
             fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
             self.__fitnessDict[genomeId]["results"].append(fitness)
-            errorMargin = self.__getErrorMargin(self.__fitnessDict[genomeId]["results"])
-            print("result collected: ", genomeId, ": fitness = ", str(fitness), " error = ", errorMargin)
-
-            if errorMargin > FitnessServer.fitnessAllowedError and runUntilConfident:
-                self.__fitnessDict[genomeId]["runCount"] += FitnessServer.genomeRunCount
-                for i in range(0, FitnessServer.genomeRunCount):
-                    self.__addJob(genomeId)
+            print("result collected: ", genomeId, ": fitness = ", str(fitness))
             
             self.__currPlayerCount -= 1
             self.__fitnessDict[genomeId]["processList"].pop(pid, None)
