@@ -17,7 +17,7 @@ def hashBlake2(val, hSize=32):
     return h.hexdigest()
 
 class FitnessServer():
-    genomeRunCount = 15 # how many times one genome should be run
+    genomeRunCount = 1 # how many times one genome should be run
     maxPlayerCount = 20 # how many players should run in parallel at a time
 
     playerServerIp = "0.0.0.0"
@@ -51,7 +51,7 @@ class FitnessServer():
             schedule.run_pending()
             time.sleep(1)
 
-    watchdogTriggerCount = 8
+    watchdogTriggerCount = 1
     def __watchdog(self):
         try:
             for genomeId in self.__fitnessDict:
@@ -64,9 +64,12 @@ class FitnessServer():
                         player = self.__fitnessDict[genomeId]["processList"][pid]["player"]
                         self.__currPlayerCount -= 1
                         del player
+                        self.__fitnessDict[genomeId]["processList"].pop(pid, None)
 
                         pid.kill()
                         self.__addJob(genomeId)
+
+                        break
                     else:
                         self.__fitnessDict[genomeId]["processList"][pid]["watchDogCount"] += 1
 
@@ -85,18 +88,19 @@ class FitnessServer():
             self.__cleanup()
             
     def collectGameResult(self, playerServer, genomeId, result, rounds, pid):
-        win = int(result == "win")
-        def phi(x): return 1/(1+numpy.log(x))
-        fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
-        self.__fitnessDict[genomeId]["results"].append(fitness)
-        print("result collected: ", genomeId, ": fitness = ", str(fitness))
-        self.__currPlayerCount -= 1
-        
-        if len(self.__fitnessDict[genomeId]["results"]) >= self.__fitnessDict[genomeId]["runCount"]:
-            self.__fitnessDict[genomeId]["medianFitness"] = numpy.median(self.__fitnessDict[genomeId]["results"])
-            self.__computedResult()
-        pid.kill()
-        del playerServer
+        if genomeId in self.__fitnessDict:
+            win = int(result == "win")
+            def phi(x): return 1/(1+numpy.log(x))
+            fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
+            self.__fitnessDict[genomeId]["results"].append(fitness)
+            print("result collected: ", genomeId, ": fitness = ", str(fitness))
+            self.__currPlayerCount -= 1
+            
+            if len(self.__fitnessDict[genomeId]["results"]) >= self.__fitnessDict[genomeId]["runCount"]:
+                self.__fitnessDict[genomeId]["medianFitness"] = numpy.median(self.__fitnessDict[genomeId]["results"])
+                self.__computedResult()
+            pid.kill()
+            del playerServer
 
     def __evaluateGenome(self, genome):
         genomeId = str(hashBlake2(genome.tostring(), 10))
