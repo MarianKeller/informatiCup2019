@@ -94,7 +94,9 @@ class FitnessServer():
             fitness = 0.5 * (1 + (-1) ** (win + 1) * phi(rounds))
             self.__fitnessDict[genomeId]["results"].append(fitness)
             print("result collected: ", genomeId, ": fitness = ", str(fitness))
+            
             self.__currPlayerCount -= 1
+            self.__fitnessDict[genomeId]["processList"].pop(pid, None)
             
             if len(self.__fitnessDict[genomeId]["results"]) >= self.__fitnessDict[genomeId]["runCount"]:
                 self.__fitnessDict[genomeId]["medianFitness"] = numpy.median(self.__fitnessDict[genomeId]["results"])
