@@ -121,6 +121,7 @@ class Population:
     def __cleanup(self):
         self.lastGeneration = deepcopy(self.activePopulation)
         self.lastGeneration.sort(key=lambda x: x.fitness, reverse=True)
+        self.generation += 1
         self.evolutionLock.release()
 
     def __evaluateGeneration(self, callback):
