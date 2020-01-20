@@ -21,7 +21,7 @@ def hashBlake2(val, hSize=32):
 
 
 class FitnessServer():
-    genomeRunCount = 20  # how many times one genome should be run
+    genomeRunCount = 50  # how many times one genome should be run
     maxPlayerCount = 20  # how many players should run in parallel at a time
 
     playerServerIp = "0.0.0.0"
@@ -166,7 +166,7 @@ class FitnessServer():
 
         self.__callback = callback
         self.__individuals = [
-            individual for individual in individuals if individual.fitness is None or numpy.random.rand() <= 0.1]
+            individual for individual in individuals if individual.fitness is None or numpy.random.rand() <= 0.3]
         self.__pendingCalculations = len(self.__individuals)
         if self.__pendingCalculations == 0:
             self.__cleanup()
