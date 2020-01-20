@@ -4,6 +4,7 @@ import os
 import glob
 import threading
 import time
+import re
 from collections import namedtuple
 from copy import deepcopy
 from threading import Thread
@@ -101,7 +102,7 @@ class Population:
         return mutatedGeneration
 
     def __init__(self, fitnessFunction: Callable, populationSize, lowerLimit, upperLimit, shape, tournamentSize,
-                 selectionPressure=0.5, mutationRate=0.01, elitism=True, activePopulation=None, graveyard: List = []):
+                 selectionPressure=0.5, mutationRate=0.01, elitism=True,generation=0, activePopulation=None, graveyard: List = []):
         # note: selection mechanism requires fitness >= 0
         self.fitnessFunction = fitnessFunction
         self.populationSize = populationSize
@@ -115,6 +116,7 @@ class Population:
         self.activePopulation = activePopulation
         self.lastGeneration = None
         self.evolutionLock = threading.Lock()
+        self.generation = generation
 
     def __cleanup(self):
         self.lastGeneration = deepcopy(self.activePopulation)
@@ -238,6 +240,8 @@ def getLatestPopulation():
     fileList.sort()
     latestPopulationFile = fileList.pop()
 
+    generationNumber = int(re.findall("\d+", latestPopulationFile).pop()) # Get the generation number from the input filename
+
     with open(latestPopulationFile, 'r') as json_file:
         json_list = list(json_file)
 
@@ -248,21 +252,22 @@ def getLatestPopulation():
         fitness = result.get("fitness")
         dude = Individual(genome=genome, fitness=fitness, ID=FitnessServer.getGenomeId(genome))
         activePopulation.append(dude)
-    return activePopulation
+    return activePopulation, generationNumber
 
 def startEvolution(startFromLastGenome=False):
     plotThread = threading.Thread(target=plotGraph)
     plotThread.start()
     fs = FitnessServer()
     if startFromLastGenome:
-        activePopulation = getLatestPopulation()
+        activePopulation, generationNumber = getLatestPopulation()
         populationSize = len(activePopulation)
     else:
         activePopulation = None
+        generationNumber = 0
         populationSize = 20
     p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=populationSize,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
-                   elitism=True, mutationRate=0.025, selectionPressure=0.5, activePopulation=activePopulation)
+                   elitism=True, mutationRate=0.025, selectionPressure=0.5, generation=generationNumber, activePopulation=activePopulation)
 
     for _ in range(1000):
         if p.lastGeneration:
