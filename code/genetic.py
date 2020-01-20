@@ -259,7 +259,7 @@ def startEvolution(startFromLastGenome=False):
         populationSize = len(activePopulation)
     else:
         activePopulation = None
-        populationSize = 100
+        populationSize = 20
     p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=populationSize,
                    lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
                    elitism=True, mutationRate=0.025, selectionPressure=0.5, activePopulation=activePopulation)
