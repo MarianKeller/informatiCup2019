@@ -5,7 +5,7 @@ WORKDIR /app
 
 RUN pip install -r requirements.txt
 
-COPY /code /app
+COPY /code .
 
 ENTRYPOINT ["python"]
 CMD ["genetic.py"]
