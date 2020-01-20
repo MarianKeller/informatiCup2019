@@ -225,7 +225,8 @@ def plotGraph():
 
 def getLatestGenome():
     fileList = glob.glob(genPath + "/*.jsonl")
-    fileList.sort()
+    dre = re.compile(r'(\d+)')
+    fileList.sort(key=lambda l: [int(s) if s.isdigit() else s.lower() for s in re.split(dre, l)])
     latestPopulationFile = fileList.pop()
 
     with open(latestPopulationFile, 'r') as json_file:
@@ -238,7 +239,8 @@ def getLatestGenome():
 
 def getLatestPopulation():
     fileList = glob.glob(genPath + "/*.jsonl")
-    fileList.sort()
+    dre = re.compile(r'(\d+)')
+    fileList.sort(key=lambda l: [int(s) if s.isdigit() else s.lower() for s in re.split(dre, l)])
     latestPopulationFile = fileList.pop()
 
     generationNumber = int(re.findall("\d+", latestPopulationFile).pop()) # Get the generation number from the input filename
