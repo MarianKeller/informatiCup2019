@@ -269,8 +269,8 @@ def startEvolution(startFromLastGenome=False):
         generationNumber = 0
         populationSize = 20
     p = Population(fitnessFunction=lambda pop, callb: fs.evaluateGenomes(pop, callb), populationSize=populationSize,
-                   lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=7,
-                   elitism=True, mutationRate=0.025, selectionPressure=0.5, generation=generationNumber, activePopulation=activePopulation)
+                   lowerLimit=-1, upperLimit=1, shape=(numPossibleActions, inputVectorSize), tournamentSize=4,
+                   elitism=True, mutationRate=0.1, selectionPressure=0.25, generation=generationNumber, activePopulation=activePopulation)
 
     for _ in range(1000):
         if p.lastGeneration:
