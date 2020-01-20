@@ -287,15 +287,18 @@ def startGame():
 @post("/main")
 def main():
     incomingRequest = request.json
+    response = {}
     if "evolve" in incomingRequest:
         if incomingRequest.get("startFromLast", False):
             thread = Thread(target=startEvolution, args=(True,))
+            response["sessionType"] = "training"
         else:
             thread = Thread(target=startEvolution, args=(False,))
     elif "play" in incomingRequest:
         thread = Thread(target=startGame)
+        response["sessionType"] = "playing"
     thread.start()
-    return "main"
+    return response
 
 BaseRequest.MEMFILE_MAX = 10 * 1024 * 1024
 run(host=FitnessServer.playerServerIp,
