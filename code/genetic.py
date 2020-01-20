@@ -258,8 +258,8 @@ def getLatestPopulation():
     return activePopulation, generationNumber
 
 def startEvolution(startFromLastGenome=False):
-    plotThread = threading.Thread(target=plotGraph)
-    plotThread.start()
+    #plotThread = threading.Thread(target=plotGraph)
+    #plotThread.start()
     fs = FitnessServer()
     if startFromLastGenome:
         activePopulation, generationNumber = getLatestPopulation()
