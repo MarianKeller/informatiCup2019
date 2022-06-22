@@ -1,6 +1,6 @@
 schedule==0.6.0
 matplotlib==3.1.2
-numpy==1.18.1
+numpy==1.22.0
 requests==2.22.0
 bottle==0.12.18
 jsonlines==1.2.0
